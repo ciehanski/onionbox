@@ -1,0 +1,18 @@
+language: go
+sudo: false
+install: true
+os:
+  - linux
+  - osx
+dist: xenial
+go:
+  - 1.11.x
+env:
+  - GO111MODULE=on
+  - CGO_ENABLED=1
+  - GOOS=linux
+  - GOARCH=amd64
+before_script:
+  - go test -v ./...
+script:
+  - go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
