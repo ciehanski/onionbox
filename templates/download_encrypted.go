@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+package templates
+
+// Too avoid needing HTML files with the static binary
+const DownloadHTML = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>onionbox - Download Encrypted</title>
@@ -13,4 +16,4 @@
             <input type="submit">
         </form>
     </body>
-</html>
+</html>`

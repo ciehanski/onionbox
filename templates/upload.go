@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+package templates
+
+// Too avoid needing HTML files with the static binary
+const UploadHTML = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <title>onionbox - Upload</title>
@@ -19,4 +22,4 @@
             <input type="submit">
         </form>
     </body>
-</html>
+</html>`
