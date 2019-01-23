@@ -15,7 +15,7 @@
             <input type="checkbox" name="limit_downloads">Limit downloads?<br>
             <input type="number" name="download_limit"><br>
             <input type="checkbox" name="expire">Automatically expire download link after?<br>
-            <input type="date" name="expiration_time"><br><br>
+            <input type="time" name="expiration_time"><br><br>
             <input type="submit">
         </form>
     </body>
