@@ -1,4 +1,4 @@
-package onion_file
+package onion_buffer
 
 import (
 	"archive/zip"
@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// OnionFile struct
-type OnionFile struct {
+// OnionBuffer struct
+type OnionBuffer struct {
 	sync.Mutex
 	Name             string
 	Bytes            []byte
@@ -24,7 +24,7 @@ type OnionFile struct {
 	ExpiresAt        time.Time
 }
 
-func (of *OnionFile) Destroy() error {
+func (of *OnionBuffer) Destroy() error {
 	var err error
 	buffer := bytes.NewBuffer(of.Bytes)
 	zWriter := zip.NewWriter(buffer)
@@ -55,7 +55,7 @@ func (of *OnionFile) Destroy() error {
 	return nil
 }
 
-func (of *OnionFile) IsExpired() bool {
+func (of *OnionBuffer) IsExpired() bool {
 	if of.ExpiresAt.After(time.Now()) {
 		return false
 	}

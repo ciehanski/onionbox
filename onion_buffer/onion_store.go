@@ -1,14 +1,14 @@
-package onion_file
+package onion_buffer
 
 import (
 	"syscall"
 )
 
 type OnionStore struct {
-	BufferFiles []*OnionFile
+	BufferFiles []*OnionBuffer
 }
 
-func (store *OnionStore) Add(of *OnionFile) error {
+func (store *OnionStore) Add(of *OnionBuffer) error {
 	of.Lock()
 	// TODO: Below append causes nil pointer error for some reason
 	store.BufferFiles = append(store.BufferFiles, of)
@@ -19,7 +19,7 @@ func (store *OnionStore) Add(of *OnionFile) error {
 	return nil
 }
 
-func (store *OnionStore) Get(filename string) *OnionFile {
+func (store *OnionStore) Get(filename string) *OnionBuffer {
 	for _, f := range store.BufferFiles {
 		f.Lock()
 		if f.Name == filename {
@@ -30,7 +30,7 @@ func (store *OnionStore) Get(filename string) *OnionFile {
 	return nil
 }
 
-func (store *OnionStore) Delete(of *OnionFile) error {
+func (store *OnionStore) Delete(of *OnionBuffer) error {
 	for i, f := range store.BufferFiles {
 		f.Lock()
 		if f.Name == of.Name {
@@ -81,7 +81,7 @@ func DeleteExpiredBuffers() {
 
 func NewStore() *OnionStore {
 	store := &OnionStore{
-		BufferFiles: make([]*OnionFile, 0),
+		BufferFiles: make([]*OnionBuffer, 0),
 	}
 	return store
 }

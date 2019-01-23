@@ -8,6 +8,7 @@ const UploadHTML = `<!DOCTYPE html>
         <meta charset="UTF-8">
     </head>
     <body>
+		<center>
         <h2>Please select the file you would like to securely share.</h2>
         <form method="post" enctype="multipart/form-data" action="/">
             <input type="file" name="files" required multiple><br>
@@ -19,7 +20,8 @@ const UploadHTML = `<!DOCTYPE html>
             <input type="number" name="download_limit"><br>
             <input type="checkbox" name="expire">Automatically expire download link after?<br>
             <input type="time" name="expiration_time"><br><br>
-            <input type="submit">
+            <input type="submit" value="Upload">
         </form>
+		</center>
     </body>
 </html>`

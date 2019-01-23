@@ -23,4 +23,4 @@ lint: # Will lint the project
 test: lint # Will run tests on the project as well as lint
 	go test -v ./...
 
-.PHONY: run stop lint test linux arm
+.PHONY: run stop exec lint test linux arm

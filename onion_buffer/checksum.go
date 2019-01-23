@@ -1,4 +1,4 @@
-package onion_file
+package onion_buffer
 
 import (
 	"bufio"
@@ -11,7 +11,7 @@ import (
 
 const chunkSize = 1024
 
-func (of *OnionFile) GetChecksum() (string, error) {
+func (of *OnionBuffer) GetChecksum() (string, error) {
 	hash := md5.New()
 	var count int
 	var err error
@@ -39,7 +39,7 @@ func (of *OnionFile) GetChecksum() (string, error) {
 	return hex.EncodeToString(hashInBytes), nil
 }
 
-func (of *OnionFile) ValidateChecksum() (bool, error) {
+func (of *OnionBuffer) ValidateChecksum() (bool, error) {
 	chksm, err := of.GetChecksum()
 	if err != nil {
 		return false, err
