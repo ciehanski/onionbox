@@ -26,30 +26,22 @@ import (
 
 const chunkSize = 1024
 
-type Onionbox struct {
-	Logger      *log.Logger
-	TorVersion3 bool
-	OnionSvc    *tor.OnionService
+type onionbox struct {
 	Debug       bool
+	Logger      *log.Logger
 	FileStore   []*onion_file.OnionFile
+	MaxMemory   int64
+	TorVersion3 bool
+	OnionURL    string
 }
 
-//func init() {
-//	// Create files dir
-//	filesDir, _ := os.Getwd()
-//	filesPath := path.Join(filesDir, "files")
-//	if _, err := os.Stat(filesPath); os.IsNotExist(err) {
-//		if err := os.Mkdir(filesPath, 0755); err != nil {
-//			os.Exit(1)
-//		}
-//	}
-//}
-
 func main() {
-	ob := Onionbox{Logger: log.New(os.Stdout, "[onionbox] ", log.LstdFlags)}
+	// Create onionbox instance
+	ob := onionbox{Logger: log.New(os.Stdout, "[onionbox] ", log.LstdFlags)}
 	// Init flags
 	flag.BoolVar(&ob.Debug, "debug", false, "run in debug mode")
 	flag.BoolVar(&ob.TorVersion3, "torv3", true, "use version 3 of the Tor circuit")
+	flag.Int64Var(&ob.MaxMemory, "mem", 128, "max memory allotted for handling file buffers")
 	// Parse flags
 	flag.Parse()
 
@@ -86,8 +78,8 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	ob.OnionSvc = onionSvc
 
+	ob.OnionURL = onionSvc.ID
 	ob.logf("Please open a Tor capable browser and navigate to http://%v.onion\n", onionSvc.ID)
 
 	// Init routes
@@ -107,11 +99,10 @@ func main() {
 			ob.logf("Error shutting down onionbox server: %v", err)
 			os.Exit(1)
 		}
-		ob.destroy(0)
 	}()
 }
 
-func (ob *Onionbox) router(w http.ResponseWriter, r *http.Request) {
+func (ob *onionbox) router(w http.ResponseWriter, r *http.Request) {
 	// Set download url regex
 	downloadURLreg := regexp.MustCompile(`((?:[a-z][a-z]+))`)
 
@@ -122,17 +113,14 @@ func (ob *Onionbox) router(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
+func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		// Create CSRF
-		hasher := md5.New()
-		_, err := io.WriteString(hasher, strconv.FormatInt(time.Now().Unix(), 10))
+		csrf, err := createCSRF()
 		if err != nil {
-			ob.logf("%v", err)
-			http.Error(w, "CSRF Error.", http.StatusInternalServerError)
+			ob.logf("Error creating CSRF token: %v", err)
+			http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
 		}
-		csrf := fmt.Sprintf("%x", hasher.Sum(nil))
 		// Parse template
 		t, err := template.ParseFiles("./templates/upload.gtpl")
 		if err != nil {
@@ -146,14 +134,15 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		}
 	case http.MethodPost:
 		// Parse file(s) from form
-		if err := r.ParseMultipartForm(512 << 20); err != nil {
+		if err := r.ParseMultipartForm(ob.MaxMemory << 20); err != nil {
 			ob.logf("Error parsing files from form: %v", err)
 			http.Error(w, "Error parsing files.", http.StatusInternalServerError)
 		}
-		// Loop through all files in the form
+		// Create buffer for session in-memory zip file
 		filesBuffer := new(bytes.Buffer)
 		zWriter := zip.NewWriter(filesBuffer)
 		files := r.MultipartForm.File["files"]
+		// Loop through all files in the form
 		for _, fileHeader := range files {
 			// Open uploaded file
 			file, err := fileHeader.Open()
@@ -161,7 +150,6 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 				ob.logf("Error opening file %s: %v", fileHeader.Filename, err)
 				http.Error(w, "Error uploading files.", http.StatusInternalServerError)
 			}
-
 			// Create file in zip with same name
 			bufFile, err := zWriter.Create(fileHeader.Filename)
 			if err != nil {
@@ -169,8 +157,8 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Error uploading files.", http.StatusInternalServerError)
 			}
 			// Read uploaded file
-			reader := bufio.NewReader(file)
 			var count int
+			reader := bufio.NewReader(file)
 			chunk := make([]byte, chunkSize)
 			for {
 				if count, err = reader.Read(chunk); err != nil {
@@ -188,62 +176,49 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			} else {
 				err = nil
 			}
-
-			// TODO: comeback. Would prefer to use bufFile.Write and loop through each chunk of file instead
-			// TODO: of using io.Copy. Need benchmarks
-			// Copy contents from uploaded file into file in zip
-			//_, err = io.Copy(bufFile, file)
-			//if err != nil {
-			//	ob.logf("Error copying uploaded file into zip: %v", err)
-			//	http.Error(w, "Error uploading files.", http.StatusInternalServerError)
-			//}
 		}
 		// Close zipwriter
 		if err := zWriter.Close(); err != nil {
 			ob.logf("Error closing zip writer: %v", err)
 		}
-
 		// Create random zip name
-		zipFile := strings.ToLower(randomdata.SillyName())
-		of := &onion_file.OnionFile{Name: zipFile, CreatedAt: time.Now()}
-
+		zipFileName := strings.ToLower(randomdata.SillyName())
+		// Create OnionFile object
+		oFile := &onion_file.OnionFile{Name: zipFileName, CreatedAt: time.Now()}
 		// If password option was enabled
 		if r.FormValue("password_enabled") == "on" {
 			pass := r.FormValue("password")
-			of.Bytes = onion_file.Encrypt(filesBuffer.Bytes(), pass)
-			// Write the zipped file to the disk
-			//if err := ioutil.WriteFile("./files/"+zipFile+".zip", encryptedBytes, 0777); err != nil {
-			//	ob.logf("Error writing encrypted zip to disk: %v", err)
-			//	http.Error(w, "Error writing encrypted zip to disk.", http.StatusInternalServerError)
-			//}
-			of.Encrypted = true
+			encryptedBytes, err := onion_file.Encrypt(filesBuffer.Bytes(), pass)
+			if err != nil {
+				ob.logf("Error encrypting buffer: %v", err)
+				http.Error(w, "Error encrypting buffer.", http.StatusInternalServerError)
+			}
+			oFile.Bytes = encryptedBytes
+			oFile.Encrypted = true
 		} else {
-			of.Bytes = filesBuffer.Bytes()
-			// Write the zipped file to the disk
-			//if err := ioutil.WriteFile("./files/"+zipFile+".zip", filesBuffer.Bytes(), 0777); err != nil {
-			//	ob.logf("Error writing zip to disk: %v", err)
-			//	http.Error(w, "Error writing zip to disk.", http.StatusInternalServerError)
-			//}
+			oFile.Bytes = filesBuffer.Bytes()
 		}
 		// If limit downloads was enabled
 		if r.FormValue("limit_downloads") == "on" {
-			// TODO: implement
 			form := r.FormValue("download_limit")
 			limit, _ := strconv.Atoi(form)
-			of.DownloadLimit = limit
+			oFile.DownloadLimit = limit
 		}
 		// if expiration was enabled
 		if r.FormValue("expire") == "on" {
-			// TODO: implement
-			of.ExpiresAfter = time.Hour * 1
+			expiration := r.FormValue("expiration_time")
+			t, err := time.ParseDuration(expiration)
+			if err != nil {
+				ob.logf("Error parsing expiration time: %v", err)
+				http.Error(w, "Error parsing expiration time.", http.StatusInternalServerError)
+			}
+			oFile.ExpiresAfter = t
 		}
-
 		// Append onion file to filestore
-		ob.FileStore = append(ob.FileStore, of)
-
-		// Redirect to the files download page
+		ob.FileStore = append(ob.FileStore, oFile)
+		// Write the zip's URL to client for sharing
 		_, err := w.Write([]byte(fmt.Sprintf("Files uploaded. Please share this link with your recipients: http://%s.onion/%s",
-			ob.OnionSvc.ID, of.Name)))
+			ob.OnionURL, oFile.Name)))
 		if err != nil {
 			ob.logf("Error writing to client: %v", err)
 			http.Error(w, "Error writing to client.", http.StatusInternalServerError)
@@ -253,21 +228,17 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
-	//file := r.URL.Path[1:] + ".zip"
+func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		for _, of := range ob.FileStore {
 			if of.Name == r.URL.Path[1:] {
 				if of.Encrypted {
-					// Create CSRF
-					hasher := md5.New()
-					_, err := io.WriteString(hasher, strconv.FormatInt(time.Now().Unix(), 10))
+					csrf, err := createCSRF()
 					if err != nil {
-						ob.logf("%v", err)
-						http.Error(w, "CSRF Error.", http.StatusInternalServerError)
+						ob.logf("Error creating CSRF token: %v", err)
+						http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
 					}
-					csrf := fmt.Sprintf("%x", hasher.Sum(nil))
 					// Parse template
 					t, err := template.ParseFiles("./templates/download_encrypted.gtpl")
 					if err != nil {
@@ -281,21 +252,17 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 					}
 				} else {
 					if of.Downloads <= of.DownloadLimit {
-						of.Downloads += 1
+						// Increment files download count
+						of.Downloads++
+						// Set headers for browser to initiate download
 						w.Header().Set("Content-Type", "application/zip")
 						w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", of.Name))
-						w.Write(of.Bytes)
-						// Parse template
-						//t, err := template.ParseFiles("./templates/download.gtpl")
-						//if err != nil {
-						//	ob.logf("Error loading template: %v", err)
-						//	http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
-						//}
-						//// Execute template
-						//if err := t.Execute(w, fmt.Sprintf("/files/%s", file)); err != nil {
-						//	ob.logf("Error executing template: %v", err)
-						//	http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
-						//}
+						// Write the zip bytes to the response for download
+						_, err := w.Write(of.Bytes)
+						if err != nil {
+							ob.logf("Error writing to client: %v", err)
+							http.Error(w, "Error writing to client.", http.StatusInternalServerError)
+						}
 					} else {
 						http.Error(w, "Download Limit Reached.", http.StatusUnauthorized)
 					}
@@ -305,23 +272,27 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	case http.MethodPost:
-		//zipBytes, err := ioutil.ReadFile("./files/"+file)
-		//if err != nil {
-		//	ob.logf("Error reading zip file: %v", err)
-		//}
 		for _, of := range ob.FileStore {
 			if of.Name == r.URL.Path[1:] {
 				if of.Downloads <= of.DownloadLimit {
+					// Get password and decrypt zip for download
 					pass := r.FormValue("password")
-					decryptedBytes := onion_file.Decrypt(of.Bytes, pass)
-					of.Downloads += 1
+					decryptedBytes, err := onion_file.Decrypt(of.Bytes, pass)
+					if err != nil {
+						ob.logf("Error decrypting buffer: %v", err)
+						http.Error(w, "Error decrypting buffer.", http.StatusInternalServerError)
+					}
+					// Increment files download count
+					of.Downloads++
+					// Set headers for browser to initiate download
 					w.Header().Set("Content-Type", "application/zip")
 					w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", of.Name))
-					w.Write(decryptedBytes)
-					// Write the zipped file to the disk
-					//if err := ioutil.WriteFile("./files/"+file, decryptedBytes, 0777); err != nil {
-					//	ob.logf("Error decrypting zip file: %v", err)
-					//}
+					// Write the zip bytes to the response for download
+					_, err = w.Write(decryptedBytes)
+					if err != nil {
+						ob.logf("Error writing to client: %v", err)
+						http.Error(w, "Error writing to client.", http.StatusInternalServerError)
+					}
 				} else {
 					http.Error(w, "Download Limit Reached.", http.StatusUnauthorized)
 				}
@@ -332,16 +303,16 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// After download limit or expiration of all files, kill the server and assets.
-func (ob *Onionbox) destroy(exitCode int) {
-	ob.FileStore = []*onion_file.OnionFile{}
-	if err := os.RemoveAll("./files"); err != nil {
-		ob.logf("Error removing files dir: %v", err)
+func createCSRF() (string, error) {
+	hasher := md5.New()
+	_, err := io.WriteString(hasher, strconv.FormatInt(time.Now().Unix(), 10))
+	if err != nil {
+		return "", err
 	}
-	os.Exit(exitCode)
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
-func (ob *Onionbox) logf(format string, args ...interface{}) {
+func (ob *onionbox) logf(format string, args ...interface{}) {
 	if ob.Debug {
 		ob.Logger.Printf(format, args...)
 	}
