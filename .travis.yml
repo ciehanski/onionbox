@@ -28,12 +28,12 @@ matrix:
     - name: linux-386
       env: GO111MODULE=on GOOS=linux GOARCH=386 BINARY=onionbox-linux-386
     - name: android
-      env: CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm64
+      env: CGO_ENABLED=1 GO111MODULE=on
       install:
         - go get -u -a -v -x github.com/ipsn/go-libtor
         - go get golang.org/x/mobile/cmd/gomobile
         - gomobile init
-      before_script: gomobile bind -v -x -target=android -o onionbox-android.aar .
+      before_script: gomobile bind -v -x -ndk -target=android -o onionbox-android.aar .
 install: go get -u -a -v -x github.com/ipsn/go-libtor
 before_script: CGO_ENABLED=1 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${BINARY} .
 script: go test -v ./...
