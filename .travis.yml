@@ -3,7 +3,6 @@ sudo: false
 install: true
 os:
   - linux
-  - osx
 dist: xenial
 go:
   - 1.11.x
