@@ -9,12 +9,8 @@ go:
   - 1.11.x
 env:
   - GO111MODULE=on
-  - CGO_ENABLED=1
-  - GOOS=linux
-  - GOARCH=amd64
 before_script:
   - go get -u -a -v -x github.com/ipsn/go-libtor
-  - go mod download
-  - go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
+  - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
 script:
   - go test -v ./...
