@@ -42,6 +42,7 @@ All other dependencies are required to interface with Tor.
 - [x] Docker build
 - [ ] Get docker-compose working with a dnscrypt-proxy. Maybe overkill or moot
 but sounds cool as hell, right?
+- [ ] Windows support
 - [ ] ARM support?
 
 ## Shoutouts:

@@ -1,15 +1,21 @@
 language: go
 sudo: false
 install: true
-os:
-  - linux
-dist: xenial
-go:
-  - 1.11.x
-env:
-  - GO111MODULE=on
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      go: 1.11.x
+      env: GO111MODULE=on GOOS=linux
+    - os: linux
+      dist: trusty
+      go: 1.11.x
+      env: GO111MODULE=on GOOS=linux
+    - os: windows
+      go: 1.11.x
+      env: GO111MODULE=on GOOS=windows
 before_script:
   - go get -u -a -v -x github.com/ipsn/go-libtor
-  - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
+  - CGO_ENABLED=1 GOARCH=amd64 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
 script:
   - go test -v ./...
