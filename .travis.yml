@@ -14,6 +14,7 @@ env:
   - GOARCH=amd64
 before_script:
   - go get -u -a -v -x github.com/ipsn/go-libtor
+  - go mod download
   - go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
 script:
   - go test -v ./...
