@@ -1,7 +1,9 @@
 package onion_buffer
 
 import (
+	"log"
 	"syscall"
+	"time"
 )
 
 type OnionStore struct {
@@ -27,9 +29,9 @@ func (store *OnionStore) Get(bufName string) *OnionBuffer {
 	return nil
 }
 
-func (store *OnionStore) Delete(of *OnionBuffer) error {
+func (store *OnionStore) Delete(oBuffer *OnionBuffer) error {
 	for i, f := range store.BufferFiles {
-		if f.Name == of.Name {
+		if f.Name == oBuffer.Name {
 			if err := f.Destroy(); err != nil {
 				return err
 			}
@@ -71,13 +73,23 @@ func (store *OnionStore) DestroyAll() error {
 	return nil
 }
 
-func DeleteExpiredBuffers() {
-	// TODO: implement go routine that always checks each onion file
-	//  if its expired. If so, destroy it.
+func NewStore() *OnionStore {
+	return &OnionStore{BufferFiles: make([]*OnionBuffer, 0)}
 }
 
-func NewStore() *OnionStore {
-	return &OnionStore{
-		BufferFiles: make([]*OnionBuffer, 0),
+func (store *OnionStore) DestroyExpiredBuffers() error {
+	for {
+		if store != nil {
+			for _, f := range store.BufferFiles {
+				if f.Expire {
+					if f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
+						log.Printf("Destroyed expired buffer %s", f.Name)
+						if err := f.Destroy(); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
 	}
 }

@@ -1,24 +1,39 @@
 language: go
-sudo: false
-install: true
+go: 1.11.x
 os: linux
 dist: xenial
-go: 1.11.x
+sudo: false
 matrix:
   include:
-    - env: GO111MODULE=on GOOS=linux GOARCH=amd64 BINARY=onionbox-linux-amd64
-    - env: GO111MODULE=on GOOS=linux GOARCH=arm64 BINARY=onionbox-linux-arm64
-    - env: GO111MODULE=on GOOS=linux GOARCH=arm BINARY=onionbox-linux-arm
-    - env: GO111MODULE=on GOOS=darwin GOARCH=amd64 BINARY=onionbox-darwin-amd64
-    - env: GO111MODULE=on GOOS=darwin GOARCH=386 BINARY=onionbox-darwin-386
-    - env: GO111MODULE=on GOOS=freebsd GOARCH=amd64 BINARY=onionbox-freebsd-amd64
-    - env: GO111MODULE=on GOOS=freebsd GOARCH=386 BINARY=onionbox-freebsd-386
-    - env: GO111MODULE=on GOOS=freebsd GOARCH=arm BINARY=onionbox-freebsd-arm
-    - env: GO111MODULE=on GOOS=windows GOARCH=amd64 BINARY=onionbox-amd64.exe
-    - env: GO111MODULE=on GOOS=windows GOARCH=386 BINARY=onionbox-386.exe
-    - env: GO111MODULE=on GOOS=linux GOARCH=386 BINARY=onionbox-linux-386
-before_script:
-  - go get -u -a -v -x github.com/ipsn/go-libtor
-  - CGO_ENABLED=1 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${BINARY} .
-script:
-  - go test -v ./...
+    - name: linux-amd64
+      env: GO111MODULE=on GOOS=linux GOARCH=amd64 BINARY=onionbox-linux-amd64
+    - name: linux-arm64
+      env: GO111MODULE=on GOOS=linux GOARCH=arm64 BINARY=onionbox-linux-arm64
+    - name: linux-arm
+      env: GO111MODULE=on GOOS=linux GOARCH=arm BINARY=onionbox-linux-arm
+    - name: darwin-amd64
+      env: GO111MODULE=on GOOS=darwin GOARCH=amd64 BINARY=onionbox-darwin-amd64
+    - name: darwin-386
+      env: GO111MODULE=on GOOS=darwin GOARCH=386 BINARY=onionbox-darwin-386
+    - name: freebsd-amd64
+      env: GO111MODULE=on GOOS=freebsd GOARCH=amd64 BINARY=onionbox-freebsd-amd64
+    - name: freebsd-386
+      env: GO111MODULE=on GOOS=freebsd GOARCH=386 BINARY=onionbox-freebsd-386
+    - name: freebsd-arm
+      env: GO111MODULE=on GOOS=freebsd GOARCH=arm BINARY=onionbox-freebsd-arm
+    - name: windows-amd64
+      env: GO111MODULE=on GOOS=windows GOARCH=amd64 BINARY=onionbox-amd64.exe
+    - name: windows-386
+      env: GO111MODULE=on GOOS=windows GOARCH=386 BINARY=onionbox-386.exe
+    - name: linux-386
+      env: GO111MODULE=on GOOS=linux GOARCH=386 BINARY=onionbox-linux-386
+    - name: android
+      env: CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm64
+      install:
+        - go get -u -a -v -x github.com/ipsn/go-libtor
+        - go get golang.org/x/mobile/cmd/gomobile
+        - gomobile init
+      before_script: gomobile bind -v -x -target=android -o onionbox-android.aar .
+install: go get -u -a -v -x github.com/ipsn/go-libtor
+before_script: CGO_ENABLED=1 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o ${BINARY} .
+script: go test -v ./...

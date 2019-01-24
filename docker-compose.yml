@@ -6,11 +6,9 @@ services:
     container_name: dnscrypt
     image: jedisct1/dnscrypt-server
     ports:
-      - 443:443/tcp
-      - 443:443/udp
+      - 443:443
     expose:
-      - 443/tcp
-      - 443/udp
+      - 443
     restart: unless-stopped
     command: init -N onionbox.com -E ${EXTERNAL_IP}:443
   onionbox:

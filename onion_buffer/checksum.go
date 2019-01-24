@@ -11,12 +11,12 @@ import (
 
 const chunkSize = 1024
 
-func (of *OnionBuffer) GetChecksum() (string, error) {
-	of.Lock()
+func (oBuffer *OnionBuffer) GetChecksum() (string, error) {
+	oBuffer.Lock()
 	var count int
 	var err error
 	hash := md5.New()
-	reader := bufio.NewReader(bytes.NewReader(of.Bytes))
+	reader := bufio.NewReader(bytes.NewReader(oBuffer.Bytes))
 	chunk := make([]byte, chunkSize)
 	// Lock memory allotted to chunk from being used in SWAP
 	if err := syscall.Mlock(chunk); err != nil {
@@ -36,17 +36,17 @@ func (of *OnionBuffer) GetChecksum() (string, error) {
 	} else {
 		err = nil
 	}
-	of.Unlock()
+	oBuffer.Unlock()
 	hashInBytes := hash.Sum(nil)[:16]
 	return hex.EncodeToString(hashInBytes), nil
 }
 
-func (of *OnionBuffer) ValidateChecksum() (bool, error) {
-	chksm, err := of.GetChecksum()
+func (oBuffer *OnionBuffer) ValidateChecksum() (bool, error) {
+	chksm, err := oBuffer.GetChecksum()
 	if err != nil {
 		return false, err
 	}
-	if of.Checksum == chksm {
+	if oBuffer.Checksum == chksm {
 		return true, nil
 	}
 	return false, nil
