@@ -25,6 +25,7 @@ type OnionBuffer struct {
 }
 
 func (of *OnionBuffer) Destroy() error {
+	of.Lock()
 	var err error
 	buffer := bytes.NewBuffer(of.Bytes)
 	zWriter := zip.NewWriter(buffer)
@@ -52,6 +53,7 @@ func (of *OnionBuffer) Destroy() error {
 	if err := syscall.Munlock(of.Bytes); err != nil {
 		return err
 	}
+	of.Unlock()
 	return nil
 }
 

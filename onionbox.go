@@ -118,8 +118,10 @@ func (ob *onionbox) router(w http.ResponseWriter, r *http.Request) {
 				r.Header.Set("filename", r.URL.Path[1:])
 				ob.download(w, r)
 			}
+		} else {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
 		}
-		http.Error(w, "File not found", http.StatusNotFound)
 	} else {
 		http.Error(w, "404 page not found", http.StatusNotFound)
 	}
@@ -132,23 +134,27 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			ob.logf("Error creating CSRF token: %v", err)
 			http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+			return
 		}
 		// Parse template
 		t, err := template.New("upload").Parse(templates.UploadHTML)
 		if err != nil {
 			ob.logf("Error loading template: %v", err)
 			http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+			return
 		}
 		// Execute template
 		if err := t.Execute(w, csrf); err != nil {
 			ob.logf("Error executing template: %v", err)
 			http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+			return
 		}
 	case http.MethodPost:
 		// Parse file(s) from form
 		if err := r.ParseMultipartForm(ob.maxMemory << 20); err != nil {
 			ob.logf("Error parsing files from form: %v", err)
 			http.Error(w, "Error parsing files.", http.StatusInternalServerError)
+			return
 		}
 		// Create buffer for session in-memory zip file
 		zipBuffer := new(bytes.Buffer)
@@ -165,12 +171,14 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				ob.logf("Error opening file %s: %v", fileHeader.Filename, err)
 				http.Error(w, "Error uploading files.", http.StatusInternalServerError)
+				return
 			}
 			// Create file in zip with same name
 			bufFile, err := zWriter.Create(fileHeader.Filename)
 			if err != nil {
 				ob.logf("Error creating new file in zip: %v", err)
 				http.Error(w, "Error uploading files.", http.StatusInternalServerError)
+				return
 			}
 			// Read uploaded file
 			var count int
@@ -188,11 +196,13 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					ob.logf("Error writing file to zip: %v", err)
 					http.Error(w, "Error writing file to zip", http.StatusInternalServerError)
+					return
 				}
 			}
 			if err != io.EOF {
 				ob.logf("Error reading uploaded file: %v", err)
 				http.Error(w, "Error reading uploaded file.", http.StatusInternalServerError)
+				return
 			} else {
 				err = nil
 			}
@@ -206,37 +216,45 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			ob.logf("Error closing zip writer: %v", err)
 		}
 		// Create random zip name
-		zipFileName := strings.ToLower(randomdata.SillyName())
+		zipBufferName := strings.ToLower(randomdata.SillyName())
 		// Create OnionBuffer object
-		oFile := &onion_buffer.OnionBuffer{Name: zipFileName, CreatedAt: time.Now()}
+		oBuffer := &onion_buffer.OnionBuffer{Name: zipBufferName, CreatedAt: time.Now()}
 		// If password option was enabled
 		if r.FormValue("password_enabled") == "on" {
 			var err error
 			pass := r.FormValue("password")
-			oFile.Bytes, err = onion_buffer.Encrypt(zipBuffer.Bytes(), pass)
+			oBuffer.Bytes, err = onion_buffer.Encrypt(zipBuffer.Bytes(), pass)
 			if err != nil {
 				ob.logf("Error encrypting buffer: %v", err)
 				http.Error(w, "Error encrypting buffer.", http.StatusInternalServerError)
+				return
 			}
-			// Lock memory allotted to oFile from being used in SWAP
-			if err := syscall.Mlock(oFile.Bytes); err != nil {
-				ob.logf("Error mlocking allotted memory for oFile: %v", err)
+			// Lock memory allotted to oBuffer from being used in SWAP
+			if err := syscall.Mlock(oBuffer.Bytes); err != nil {
+				ob.logf("Error mlocking allotted memory for oBuffer: %v", err)
 			}
-			oFile.Encrypted = true
-			chksm, err := oFile.GetChecksum()
+			oBuffer.Encrypted = true
+			chksm, err := oBuffer.GetChecksum()
 			if err != nil {
 				ob.logf("Error getting checksum: %v", err)
 				http.Error(w, "Error getting checksum.", http.StatusInternalServerError)
+				return
 			}
-			oFile.Checksum = chksm
+			oBuffer.Checksum = chksm
 		} else {
-			oFile.Bytes = zipBuffer.Bytes()
-			chksm, err := oFile.GetChecksum()
+			oBuffer.Bytes = zipBuffer.Bytes()
+			// Lock memory allotted to oBuffer from being used in SWAP
+			if err := syscall.Mlock(oBuffer.Bytes); err != nil {
+				ob.logf("Error mlocking allotted memory for oBuffer: %v", err)
+			}
+			// Get checksum
+			chksm, err := oBuffer.GetChecksum()
 			if err != nil {
 				ob.logf("Error getting checksum: %v", err)
 				http.Error(w, "Error getting checksum.", http.StatusInternalServerError)
+				return
 			}
-			oFile.Checksum = chksm
+			oBuffer.Checksum = chksm
 		}
 		// If limit downloads was enabled
 		if r.FormValue("limit_downloads") == "on" {
@@ -245,34 +263,38 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				ob.logf("Error converting duration string into time.Duration: %v", err)
 				http.Error(w, "Error getting expiration time.", http.StatusInternalServerError)
+				return
 			}
-			oFile.DownloadLimit = limit
+			oBuffer.DownloadLimit = limit
 		}
 		// if expiration was enabled
 		if r.FormValue("expire") == "on" {
-			expiration := r.FormValue("expiration_time")
+			expiration := fmt.Sprintf("%sm", r.FormValue("expiration_time"))
 			t, err := time.ParseDuration(expiration)
 			if err != nil {
 				ob.logf("Error parsing expiration time: %v", err)
 				http.Error(w, "Error parsing expiration time.", http.StatusInternalServerError)
+				return
 			}
-			oFile.ExpiresAt = oFile.CreatedAt.Add(t)
+			oBuffer.ExpiresAt = oBuffer.CreatedAt.Add(t)
 		}
 		// Append onion file to filestore
-		if err := ob.store.Add(oFile); err != nil {
+		if err := ob.store.Add(oBuffer); err != nil {
 			ob.logf("Error adding file to store: %v", err)
 			http.Error(w, "Error adding file to store.", http.StatusInternalServerError)
+			return
 		}
-		// Set temp oFile var to nil
-		if err := oFile.Destroy(); err != nil {
-			ob.logf("Error destroying temporary var for %s", oFile.Name)
+		// Set temp oBuffer var to nil
+		if err := oBuffer.Destroy(); err != nil {
+			ob.logf("Error destroying temporary var for %s", oBuffer.Name)
 		}
 		// Write the zip's URL to client for sharing
 		_, err := w.Write([]byte(fmt.Sprintf("Files uploaded. Please share this link with your recipients: http://%s.onion/%s",
-			ob.onionURL, oFile.Name)))
+			ob.onionURL, oBuffer.Name)))
 		if err != nil {
 			ob.logf("Error writing to client: %v", err)
 			http.Error(w, "Error writing to client.", http.StatusInternalServerError)
+			return
 		}
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)
@@ -282,69 +304,79 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		of := ob.store.Get(r.Header.Get("filename"))
-		if of == nil {
+		oBuffer := ob.store.Get(r.Header.Get("filename"))
+		if oBuffer == nil {
 			http.Error(w, "Nil file", http.StatusInternalServerError)
+			return
 		}
-		if of.Encrypted {
+		if oBuffer.Encrypted {
 			csrf, err := createCSRF()
 			if err != nil {
 				ob.logf("Error creating CSRF token: %v", err)
 				http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+				return
 			}
 			// Parse template
 			t, err := template.New("download_encrypted").Parse(templates.DownloadHTML)
 			if err != nil {
 				ob.logf("Error loading template: %v", err)
 				http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+				return
 			}
 			// Execute template
 			if err := t.Execute(w, csrf); err != nil {
 				ob.logf("Error executing template: %v", err)
 				http.Error(w, "Error displaying web page, please try refreshing.", http.StatusInternalServerError)
+				return
 			}
 		} else {
-			if of.DownloadLimit > 0 && of.Downloads >= of.DownloadLimit {
-				if err := ob.store.Delete(of); err != nil {
+			if oBuffer.DownloadLimit > 0 && oBuffer.Downloads >= oBuffer.DownloadLimit {
+				if err := ob.store.Delete(oBuffer); err != nil {
 					ob.logf("Error deleting onion file from store: %v", err)
 				}
-				ob.logf("Download limit reached for %s", of.Name)
+				ob.logf("Download limit reached for %s", oBuffer.Name)
 				http.Error(w, "Download limit reached.", http.StatusUnauthorized)
+				return
 			}
 			// Check expiration
-			if of.IsExpired() {
-				if err := of.Destroy(); err != nil {
-					ob.logf("Error destroying buffer %s: %v", of.Name, err)
-				}
-				http.Error(w, "Download link has expired", http.StatusUnauthorized)
-			}
+			//if oBuffer.IsExpired() {
+			//	if err := oBuffer.Destroy(); err != nil {
+			//		ob.logf("Error destroying buffer %s: %v", oBuffer.Name, err)
+			//	}
+			//	http.Error(w, "Download link has expired", http.StatusUnauthorized)
+			//	return
+			//}
 			// Validate checksum
-			chksmValid, err := of.ValidateChecksum()
+			chksmValid, err := oBuffer.ValidateChecksum()
 			if err != nil {
 				ob.logf("Error validating checksum: %v", err)
 				http.Error(w, "Error validating checksum.", http.StatusInternalServerError)
+				return
 			}
 			if !chksmValid {
-				ob.logf("Invalid checksum for file %s", of.Name)
+				ob.logf("Invalid checksum for file %s", oBuffer.Name)
 				http.Error(w, "Invalid checksum.", http.StatusInternalServerError)
+				return
 			}
 			// Increment files download count
-			of.Downloads++
+			oBuffer.Downloads++
 			// Set headers for browser to initiate download
 			w.Header().Set("Content-Type", "application/zip")
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", of.Name))
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", oBuffer.Name))
 			// Write the zip bytes to the response for download
-			_, err = w.Write(of.Bytes)
+			_, err = w.Write(oBuffer.Bytes)
 			if err != nil {
 				ob.logf("Error writing to client: %v", err)
 				http.Error(w, "Error writing to client.", http.StatusInternalServerError)
+				return
 			}
 		}
-	// If file was password protected
+	// If buffer was password protected
 	case http.MethodPost:
 		of := ob.store.Get(r.Header.Get("filename"))
 		if of == nil {
 			http.Error(w, "Nil file", http.StatusInternalServerError)
+			return
 		}
 		if of.DownloadLimit > 0 && of.Downloads >= of.DownloadLimit {
 			if err := ob.store.Delete(of); err != nil {
@@ -352,23 +384,27 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 			}
 			ob.logf("Download limit reached for %s", of.Name)
 			http.Error(w, "Download limit reached.", http.StatusUnauthorized)
+			return
 		}
 		// Check expiration
-		if of.IsExpired() {
-			if err := of.Destroy(); err != nil {
-				ob.logf("Error destroying buffer %s: %v", of.Name, err)
-			}
-			http.Error(w, "Download link has expired", http.StatusUnauthorized)
-		}
+		//if of.IsExpired() {
+		//	if err := of.Destroy(); err != nil {
+		//		ob.logf("Error destroying buffer %s: %v", of.Name, err)
+		//	}
+		//	http.Error(w, "Download link has expired", http.StatusUnauthorized)
+		//	return
+		//}
 		// Validate checksum
 		chksmValid, err := of.ValidateChecksum()
 		if err != nil {
 			ob.logf("Error validating checksum: %v", err)
 			http.Error(w, "Error validating checksum.", http.StatusInternalServerError)
+			return
 		}
 		if !chksmValid {
 			ob.logf("Invalid checksum for file %s", of.Name)
 			http.Error(w, "Invalid checksum.", http.StatusInternalServerError)
+			return
 		}
 		// Get password and decrypt zip for download
 		pass := r.FormValue("password")
@@ -376,6 +412,7 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			ob.logf("Error decrypting buffer: %v", err)
 			http.Error(w, "Error decrypting buffer.", http.StatusInternalServerError)
+			return
 		}
 		// Lock memory allotted to decryptedBytes from being used in SWAP
 		if err := syscall.Mlock(decryptedBytes); err != nil {
@@ -391,6 +428,7 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			ob.logf("Error writing to client: %v", err)
 			http.Error(w, "Error writing to client.", http.StatusInternalServerError)
+			return
 		}
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)

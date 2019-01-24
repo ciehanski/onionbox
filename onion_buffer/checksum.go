@@ -12,9 +12,10 @@ import (
 const chunkSize = 1024
 
 func (of *OnionBuffer) GetChecksum() (string, error) {
-	hash := md5.New()
+	of.Lock()
 	var count int
 	var err error
+	hash := md5.New()
 	reader := bufio.NewReader(bytes.NewReader(of.Bytes))
 	chunk := make([]byte, chunkSize)
 	// Lock memory allotted to chunk from being used in SWAP
@@ -35,6 +36,7 @@ func (of *OnionBuffer) GetChecksum() (string, error) {
 	} else {
 		err = nil
 	}
+	of.Unlock()
 	hashInBytes := hash.Sum(nil)[:16]
 	return hex.EncodeToString(hashInBytes), nil
 }

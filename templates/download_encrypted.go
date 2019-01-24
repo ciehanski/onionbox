@@ -10,12 +10,17 @@ const DownloadHTML = `<!DOCTYPE html>
     <body>
         <center>
         <h2>Click below to download your files securely.</h2>
-        <form action="/" method="post">
+        <form method="post">
             <input type="hidden" name="token" value="{{.}}" required/>
-            <h5>Password:</h5>
+            <h4>Enter Password:</h4>
             <input type="password" name="password" required><br>
-            <input type="submit" value="Download">
+            <input type="submit" class="button" value="Download">
         </form>
 		</center>
     </body>
-</html>`
+</html>
+<style type="text/css">
+*{
+ font-family: "Courier New", Courier, monospace;
+}
+</style>`

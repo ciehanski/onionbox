@@ -10,8 +10,8 @@ to the response for download. Zip was chosen since it is the most universal arch
 standard that is supported by all operating systems.
 - You have the ability to encrypt the uploaded files' bytes if
 the content is extra sensitive. GCM is used for encryption. This means, while stored in memory, the files' bytes
-will be encrypted as well. **If password encryption is enabled, recipients will need to enter the correct password during 
-the download process or the presented zip archive will be corrupt.**
+will be encrypted as well. **If password encryption is enabled, recipients will need to enter the correct password 
+before the download.**
 - You have the ability to limit the number of downloads per download link
 generated.
 - You have the ability to enforce that download links automatically expire after a specific duration of your choosing.
@@ -25,7 +25,9 @@ of course deploy onionbox to any cloud provider of your choosing.
 ## Gotchas:
 - There is no getting around it, this project takes a little over 10 minutes to
 build. However, this will not be an issue for end users once we have the binaries
-released. It will always take a millennium to build in Docker.
+released. Docker builds will still require a long build time. This is because go-libtor
+creates a completely statically linked Tor lib before build. The dependency on net 
+doesn't help with build time much, either.
 
 ## TODO:
 - [ ] Implement tests
