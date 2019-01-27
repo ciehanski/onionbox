@@ -1,7 +1,7 @@
 package onion_buffer
 
 import (
-	"log"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -10,9 +10,14 @@ type OnionStore struct {
 	BufferFiles []*OnionBuffer
 }
 
-func (store *OnionStore) Add(oBuffer *OnionBuffer) error {
+// Used to create a nil store.
+func NewStore() *OnionStore {
+	return &OnionStore{BufferFiles: make([]*OnionBuffer, 0)}
+}
+
+func (s *OnionStore) Add(oBuffer *OnionBuffer) error {
 	oBuffer.Lock()
-	store.BufferFiles = append(store.BufferFiles, oBuffer)
+	s.BufferFiles = append(s.BufferFiles, oBuffer)
 	if err := syscall.Mlock(oBuffer.Bytes); err != nil {
 		return err
 	}
@@ -20,8 +25,8 @@ func (store *OnionStore) Add(oBuffer *OnionBuffer) error {
 	return nil
 }
 
-func (store *OnionStore) Get(bufName string) *OnionBuffer {
-	for _, f := range store.BufferFiles {
+func (s *OnionStore) Get(bufName string) *OnionBuffer {
+	for _, f := range s.BufferFiles {
 		if f.Name == bufName {
 			return f
 		}
@@ -29,15 +34,15 @@ func (store *OnionStore) Get(bufName string) *OnionBuffer {
 	return nil
 }
 
-func (store *OnionStore) Delete(oBuffer *OnionBuffer) error {
-	for i, f := range store.BufferFiles {
+func (s *OnionStore) Destroy(oBuffer *OnionBuffer) error {
+	for i, f := range s.BufferFiles {
 		if f.Name == oBuffer.Name {
 			if err := f.Destroy(); err != nil {
 				return err
 			}
-			// Remove from store
+			// Remove from s
 			f.Lock()
-			store.BufferFiles = append(store.BufferFiles[:i], store.BufferFiles[i+1:]...)
+			s.BufferFiles = append(s.BufferFiles[:i], s.BufferFiles[i+1:]...)
 			// Free niled allotted memory for SWAP usage
 			if err := syscall.Munlock(f.Bytes); err != nil {
 				return err
@@ -48,8 +53,8 @@ func (store *OnionStore) Delete(oBuffer *OnionBuffer) error {
 	return nil
 }
 
-func (store *OnionStore) Exists(bufName string) bool {
-	for _, f := range store.BufferFiles {
+func (s *OnionStore) Exists(bufName string) bool {
+	for _, f := range s.BufferFiles {
 		if f.Name == bufName {
 			return true
 		}
@@ -57,34 +62,36 @@ func (store *OnionStore) Exists(bufName string) bool {
 	return false
 }
 
-func (store *OnionStore) DestroyAll() error {
-	for i, f := range store.BufferFiles {
-		if err := f.Destroy(); err != nil {
-			return err
+func (s *OnionStore) DestroyAll() error {
+	if s != nil {
+		for i, f := range s.BufferFiles {
+			if err := f.Destroy(); err != nil {
+				return err
+			}
+			f.Lock()
+			s.BufferFiles = append(s.BufferFiles[:i], s.BufferFiles[i+1:]...)
+			if err := syscall.Munlock(f.Bytes); err != nil {
+				return err
+			}
+			f.Unlock()
 		}
-		f.Lock()
-		store.BufferFiles = append(store.BufferFiles[:i], store.BufferFiles[i+1:]...)
-		if err := syscall.Munlock(f.Bytes); err != nil {
-			return err
-		}
-		f.Unlock()
+		// TODO: needs further testing. DestroyAll should only be
+		//  used when killing the application.
+		runtime.GC()
 	}
-	//runtime.GC()
 	return nil
 }
 
-func NewStore() *OnionStore {
-	return &OnionStore{BufferFiles: make([]*OnionBuffer, 0)}
-}
-
-func (store *OnionStore) DestroyExpiredBuffers() error {
+// DestroyExpiredBuffers will indefinitely loop through the store and destroy
+// expired OnionBuffers.
+func (s *OnionStore) DestroyExpiredBuffers() error {
 	for {
-		if store != nil {
-			for _, f := range store.BufferFiles {
-				if f.Expire {
-					if f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
-						log.Printf("Destroyed expired buffer %s", f.Name)
-						if err := f.Destroy(); err != nil {
+		select {
+		case <-time.After(time.Second):
+			if s != nil {
+				for _, f := range s.BufferFiles {
+					if f.Expire && f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
+						if err := s.Destroy(f); err != nil {
 							return err
 						}
 					}

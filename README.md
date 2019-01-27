@@ -15,12 +15,12 @@ before the download.**
 - You have the ability to limit the number of downloads per download link
 generated.
 - You have the ability to enforce that download links automatically expire after a specific duration of your choosing.
-- Universal file-sharing. For instance, if you are the recipient of confidential information 
+- 2-way file sharing. For instance, if you are the recipient of confidential information 
 but the sender is not technically-savvy, you yourself can run an onionbox server, send them the 
 generated .onion URL and have them upload the files directly for you to download.
 - Can be run in a Docker container, or locally on your host machine. You could
 of course deploy onionbox to any cloud provider of your choosing.
-- Static binary! Woo! Possible ARM support.
+- Static binary! Woo! ~~Possible ARM support~~. Android is supported!
 
 ## Gotchas:
 - There is no getting around it, this project takes a little over 10 minutes to
@@ -36,19 +36,18 @@ doesn't help with build time much, either.
 - [x] Implement download limits  
 - [x] Implement password protected files
 - [x] Implement checksums
-- [ ] Implement my own name generator to remove dependency on [randomdata](https://github.com/Pallinder/go-randomdata).
-All other dependencies are required to interface with Tor.
 - [x] Static build
 - [x] Docker build
 - [ ] Get docker-compose working with a dnscrypt-proxy. Maybe overkill or moot
 but sounds cool as hell, right?
 - [ ] Windows support
-- [ ] ARM support?
+- [x] ARM support
+- [x] Android support
 
 ## Shoutouts:
 
 Huge shoutout to [@karalabe](https://github.com/karalabe), the creator of [go-libtor](https://github.com/ipsn/go-libtor) which enables the 
-creation of a Go-friendly static Tor executable which utilizes [bine](https://github.com/cretz/bine) (created by [@cretz](https://github.com/cretz))
+creation of a Go-friendly static Tor lib which utilizes [bine](https://github.com/cretz/bine) (created by [@cretz](https://github.com/cretz))
 to interface with the Tor API. Big thanks to these guys or this project would not be possible.
 
 ## License:

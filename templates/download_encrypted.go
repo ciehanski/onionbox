@@ -18,9 +18,4 @@ const DownloadHTML = `<!DOCTYPE html>
         </form>
 		</center>
     </body>
-</html>
-<style type="text/css">
-*{
- font-family: "Courier New", Courier, monospace;
-}
-</style>`
+</html>`

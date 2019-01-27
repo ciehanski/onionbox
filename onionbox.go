@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,102 +25,140 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/cretz/bine/tor"
 	"github.com/ipsn/go-libtor"
+	"github.com/natefinch/lumberjack"
 	"onionbox/onion_buffer"
 	"onionbox/templates"
 )
 
 type onionbox struct {
+	version       string
+	port          int
 	debug         bool
 	logger        *log.Logger
 	store         *onion_buffer.OnionStore
 	maxFormMemory int64
 	torVersion3   bool
 	onionURL      string
-	chunkSize     int
+	chunkSize     int64
 }
+
+var downloadURLreg = regexp.MustCompile(`((?:[a-z][a-z]+))`)
 
 func main() {
 	// Create onionbox instance that stores config
-	oBox := onionbox{
-		logger: log.New(os.Stdout, "[onionbox] ", log.LstdFlags),
-		store:  onion_buffer.NewStore(),
+	ob := onionbox{
+		version: "v0.1.0",
+		logger:  log.New(os.Stdout, "[onionbox] ", log.LstdFlags),
+		store:   onion_buffer.NewStore(),
 	}
 	// Init flags
-	flag.BoolVar(&oBox.debug, "debug", false, "run in debug mode")
-	flag.BoolVar(&oBox.torVersion3, "torv3", true, "use version 3 of the Tor circuit")
-	flag.Int64Var(&oBox.maxFormMemory, "mem", 128, "max memory allotted for handling file buffers")
-	flag.IntVar(&oBox.chunkSize, "chunk", 1024, "size of chunks for buffer I/O")
+	flag.BoolVar(&ob.debug, "debug", false, "run in debug mode")
+	flag.BoolVar(&ob.torVersion3, "torv3", true, "use version 3 of the Tor circuit")
+	flag.Int64Var(&ob.maxFormMemory, "mem", 512, "max memory allotted for handling form file buffers")
+	flag.Int64Var(&ob.chunkSize, "chunks", 1024, "size of chunks for buffer I/O")
+	flag.IntVar(&ob.port, "port", 80, "port to expose the onion service on")
 	// Parse flags
 	flag.Parse()
 
-	// Start tor
-	oBox.logf("Starting and registering onion service, please wait...")
-	t, err := tor.Start(nil, &tor.StartConf{
-		ProcessCreator: libtor.Creator,
-		DebugWriter:    os.Stderr,
-	})
-	if err != nil {
-		oBox.logf("Failed to start Tor: %v", err)
-		os.Exit(1)
+	// If debug is NOT enabled, write all logs to disk (instead of stdout)
+	// and rotate them when necessary.
+	if !ob.debug {
+		ob.logger.SetOutput(&lumberjack.Logger{
+			Filename:   "/var/log/onionbox/onionbox.log",
+			MaxSize:    100, // megabytes
+			MaxBackups: 3,
+			MaxAge:     28, // days
+			Compress:   true,
+		})
 	}
-	defer func() {
-		if err := t.Close(); err != nil {
-			oBox.logf("Error closing connection to Tor: %v", err)
-			os.Exit(1)
-		}
-	}()
 
-	// Wait at most a few minutes to publish the service
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
-	defer cancel()
-
-	// Create an onion service to listen on any port but show as 80
-	onionSvc, err := t.Listen(ctx, &tor.ListenConf{RemotePorts: []int{80}, Version3: oBox.torVersion3})
-	if err != nil {
-		oBox.logf("Failed to create onion service: %v", err)
-		os.Exit(1)
-	}
-	defer func() {
-		if err := onionSvc.Close(); err != nil {
-			oBox.logf("Error closing connection to onion service: %v", err)
-			os.Exit(1)
-		}
-	}()
-
-	oBox.onionURL = onionSvc.ID
-	oBox.logf("Please open a Tor capable browser and navigate to http://%v.onion\n", oBox.onionURL)
-
-	// Init routes
-	http.HandleFunc("/", oBox.router)
-	// Init serving
-	srv := &http.Server{
-		IdleTimeout:  time.Second * 60,
-		ReadTimeout:  time.Second * 60,
-		WriteTimeout: time.Second * 60,
-		Handler:      nil,
-	}
-	// Begin serving
-	go oBox.logger.Fatal(srv.Serve(onionSvc))
-	// Proper srv shutdown when program ends
-	defer func() {
-		if err := srv.Shutdown(context.Background()); err != nil {
-			oBox.logf("Error shutting down onionbox srv: %v", err)
-			os.Exit(1)
-		}
-	}()
 	// Create a separate go routine which infinitely loops through the store to check for
 	// expired buffer entries, and delete them.
 	go func() {
-		oBox.logf("DEB goroutine started")
-		if err := oBox.store.DestroyExpiredBuffers(); err != nil {
-			oBox.logf("Error destroying expired buffers: %v", err)
+		if err := ob.store.DestroyExpiredBuffers(); err != nil {
+			ob.logf("Error destroying expired buffers: %v", err)
+		}
+	}()
+
+	// Get running OS
+	var useEmbeddedCon bool
+	if runtime.GOOS == "windows" {
+		useEmbeddedCon = false
+	} else {
+		useEmbeddedCon = true
+	}
+
+	// Start tor
+	ob.logf("Starting and registering onion service, please wait...")
+	t, err := tor.Start(nil, &tor.StartConf{
+		ProcessCreator: libtor.Creator,
+		DebugWriter:    os.Stderr,
+		// This option is not supported on Windows
+		UseEmbeddedControlConn: useEmbeddedCon,
+	})
+	if err != nil {
+		ob.logf("Failed to start Tor: %v", err)
+		ob.quit()
+	}
+	defer func() {
+		if err := t.Close(); err != nil {
+			ob.logf("Error closing connection to Tor: %v", err)
+			ob.quit()
+		}
+	}()
+
+	// Wait at most 3 minutes to publish the service
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	// Create an onion service to listen on any port but show as 80
+	onionSvc, err := t.Listen(ctx, &tor.ListenConf{
+		RemotePorts: []int{ob.port},
+		Version3:    ob.torVersion3,
+	})
+	if err != nil {
+		ob.logf("Error creating the onion service: %v", err)
+		ob.quit()
+	}
+	defer func() {
+		if err := onionSvc.Close(); err != nil {
+			ob.logf("Error closing connection to onion service: %v", err)
+			ob.quit()
+		}
+	}()
+
+	// Display the onion service URL
+	ob.onionURL = onionSvc.ID
+	ob.logf("Please open a Tor capable browser and navigate to http://%v.onion\n", ob.onionURL)
+
+	// Init serving
+	http.HandleFunc("/", ob.router)
+	srv := &http.Server{
+		// TODO: comeback. Tor is quite slow and depending on the size of the files being
+		//  transferred, the server could timeout. I would like to keep set timeouts, but
+		//  will need to find a sweet spot or enable an option for large transfers.
+		IdleTimeout:  time.Second * 60,
+		ReadTimeout:  time.Second * 60,
+		WriteTimeout: time.Minute * 10,
+		Handler:      nil,
+	}
+	// Begin serving
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(onionSvc) }()
+	if err = <-errCh; err != nil {
+		ob.logf("Error serving on onion service: %v", err)
+		ob.quit()
+	}
+	// Proper server shutdown when program ends
+	defer func() {
+		if err := srv.Shutdown(context.Background()); err != nil {
+			ob.logf("Error shutting down onionbox: %v", err)
+			ob.quit()
 		}
 	}()
 }
 
 func (ob *onionbox) router(w http.ResponseWriter, r *http.Request) {
-	// Set download url regex
-	downloadURLreg := regexp.MustCompile(`((?:[a-z][a-z]+))`)
 	// If base URL, send to URL handler
 	if r.URL.Path == "/" {
 		ob.upload(w, r)
@@ -170,6 +209,7 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		}
 		files := r.MultipartForm.File["files"]
 		// A buffered channel that we can send work requests on.
+		// TODO: is 100 the correct value to have here?
 		uploadQueue := make(chan *multipart.FileHeader, 100)
 		// Loop through files attached in form and offload to uploadQueue channel
 		for _, fileHeader := range files {
@@ -181,11 +221,11 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		if err := syscall.Mlock(zipBuffer.Bytes()); err != nil {
 			ob.logf("Error mlocking allotted memory for zipBuffer: %v", err)
 		}
+		// Create new zip writer
+		zWriter := zip.NewWriter(zipBuffer)
 		// Wait group for sync
 		var wg sync.WaitGroup
 		wg.Add(1)
-		// Create new zip writer
-		zWriter := zip.NewWriter(zipBuffer)
 		// Write all files in queue to memory
 		go func() {
 			if err := ob.writeFilesToBuffers(zWriter, uploadQueue, &wg); err != nil {
@@ -202,7 +242,7 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			ob.logf("Error closing zip writer: %v", err)
 		}
 		// Create OnionBuffer object
-		oBuffer := &onion_buffer.OnionBuffer{Name: strings.ToLower(randomdata.SillyName())}
+		oBuffer := &onion_buffer.OnionBuffer{Name: strings.ToLower(randomdata.SillyName()), ChunkSize: ob.chunkSize}
 		// If password option was enabled
 		if r.FormValue("password_enabled") == "on" {
 			var err error
@@ -249,7 +289,7 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Error getting expiration time.", http.StatusInternalServerError)
 				return
 			}
-			oBuffer.DownloadLimit = limit
+			oBuffer.DownloadLimit = int64(limit)
 		}
 		// if expiration was enabled
 		if r.FormValue("expire") == "on" {
@@ -280,6 +320,7 @@ func (ob *onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -287,10 +328,6 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		oBuffer := ob.store.Get(r.Header.Get("filename"))
-		if oBuffer == nil {
-			http.Error(w, "Nil file", http.StatusInternalServerError)
-			return
-		}
 		if oBuffer.Encrypted {
 			csrf, err := createCSRF()
 			if err != nil {
@@ -313,19 +350,11 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			if oBuffer.DownloadLimit > 0 && oBuffer.Downloads >= oBuffer.DownloadLimit {
-				if err := ob.store.Delete(oBuffer); err != nil {
+				if err := ob.store.Destroy(oBuffer); err != nil {
 					ob.logf("Error deleting onion file from store: %v", err)
 				}
 				ob.logf("Download limit reached for %s", oBuffer.Name)
 				http.Error(w, "Download limit reached.", http.StatusUnauthorized)
-				return
-			}
-			// Check expiration
-			if oBuffer.IsExpired() {
-				if err := oBuffer.Destroy(); err != nil {
-					ob.logf("Error destroying buffer %s: %v", oBuffer.Name, err)
-				}
-				http.Error(w, "Download link has expired", http.StatusUnauthorized)
 				return
 			}
 			// Validate checksum
@@ -362,24 +391,12 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 	// If buffer was password protected
 	case http.MethodPost:
 		oBuffer := ob.store.Get(r.Header.Get("filename"))
-		if oBuffer == nil {
-			http.Error(w, "Nil file", http.StatusInternalServerError)
-			return
-		}
 		if oBuffer.DownloadLimit > 0 && oBuffer.Downloads >= oBuffer.DownloadLimit {
-			if err := ob.store.Delete(oBuffer); err != nil {
+			if err := ob.store.Destroy(oBuffer); err != nil {
 				ob.logf("Error deleting onion file from store: %v", err)
 			}
 			ob.logf("Download limit reached for %s", oBuffer.Name)
 			http.Error(w, "Download limit reached.", http.StatusUnauthorized)
-			return
-		}
-		// Check expiration
-		if oBuffer.IsExpired() {
-			if err := oBuffer.Destroy(); err != nil {
-				ob.logf("Error destroying buffer %s: %v", oBuffer.Name, err)
-			}
-			http.Error(w, "Download link has expired", http.StatusUnauthorized)
 			return
 		}
 		// Validate checksum
@@ -410,7 +427,7 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 		oBuffer.Downloads++
 		// Check download amount
 		if oBuffer.Downloads >= oBuffer.DownloadLimit {
-			if err := oBuffer.Destroy(); err != nil {
+			if err := ob.store.Destroy(oBuffer); err != nil {
 				ob.logf("Error destroying buffer %s: %v", oBuffer.Name, err)
 			}
 		}
@@ -426,64 +443,42 @@ func (ob *onionbox) download(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)
+		return
 	}
-}
-
-// createCSRF creates a simple md5 hash which I use to avoid CSRF attacks when presenting HTML
-func createCSRF() (string, error) {
-	hasher := md5.New()
-	_, err := io.WriteString(hasher, strconv.FormatInt(time.Now().Unix(), 10))
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
-}
-
-// logf is a helper function which will utilize the logger from "ob"
-// to print formatted logs. Will only print logs if "debug" is enabled on "ob".
-func (ob *onionbox) logf(format string, args ...interface{}) {
-	if ob.debug {
-		ob.logger.Printf(format, args...)
-	}
-}
-
-// destroy will destroy all stored buffers and exit onionbox.
-func (ob *onionbox) destroy() {
-	if err := ob.store.DestroyAll(); err != nil {
-		ob.logf("Error destroying all buffers from store: %v", err)
-	}
-	os.Exit(0)
 }
 
 func (ob *onionbox) writeFilesToBuffers(w *zip.Writer, uploadQueue <-chan *multipart.FileHeader, wg *sync.WaitGroup) error {
-	for fileHeader := range uploadQueue {
-		// Open uploaded file
-		file, err := fileHeader.Open()
-		if err != nil {
-			return err
-		}
-		// Create file in zip with same name
-		zBuffer, err := w.Create(fileHeader.Filename)
-		if err != nil {
-			return err
-		}
-		// Read uploaded file
-		if err := ob.writeBytesInChunks(file, zBuffer); err != nil {
-			return err
-		}
-		// Flush zipwriter to write compressed bytes to buffer
-		// before moving onto the next file
-		if err := w.Flush(); err != nil {
-			return err
+	for {
+		select {
+		case fileHeader := <-uploadQueue:
+			// Open uploaded file
+			file, err := fileHeader.Open()
+			if err != nil {
+				return err
+			}
+			// Create file in zip with same name
+			zBuffer, err := w.Create(fileHeader.Filename)
+			if err != nil {
+				return err
+			}
+			// Read uploaded file
+			if err := ob.writeBytesByChunk(file, zBuffer); err != nil {
+				return err
+			}
+			// Flush zipwriter to write compressed bytes to buffer
+			// before moving onto the next file
+			if err := w.Flush(); err != nil {
+				return err
+			}
+		default:
+			if len(uploadQueue) == 0 {
+				wg.Done()
+			}
 		}
 	}
-	// Tell the wait group we are done
-	wg.Done()
-	// No error
-	return nil
 }
 
-func (ob *onionbox) writeBytesInChunks(file io.Reader, bufWriter io.Writer) error {
+func (ob *onionbox) writeBytesByChunk(file io.Reader, bufWriter io.Writer) error {
 	// Read uploaded file
 	var count int
 	var err error
@@ -508,4 +503,28 @@ func (ob *onionbox) writeBytesInChunks(file io.Reader, bufWriter io.Writer) erro
 		err = nil
 	}
 	return nil
+}
+
+// createCSRF creates a simple md5 hash which I use to avoid CSRF attacks when presenting HTML
+func createCSRF() (string, error) {
+	hasher := md5.New()
+	_, err := io.WriteString(hasher, strconv.FormatInt(time.Now().Unix(), 10))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// logf is a helper function which will utilize the logger from ob
+// to print formatted logs.
+func (ob *onionbox) logf(format string, args ...interface{}) {
+	ob.logger.Printf(format, args...)
+}
+
+// quit will quit all stored buffers and exit onionbox.
+func (ob *onionbox) quit() {
+	if err := ob.store.DestroyAll(); err != nil {
+		ob.logf("Error destroying all buffers from store: %v", err)
+	}
+	os.Exit(0)
 }

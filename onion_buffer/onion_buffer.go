@@ -16,26 +16,30 @@ type OnionBuffer struct {
 	Name             string
 	Bytes            []byte
 	Checksum         string
+	ChunkSize        int64
 	Encrypted        bool
-	Downloads        int
-	DownloadLimit    int
+	Downloads        int64
+	DownloadLimit    int64
 	DownloadsLimited bool
 	Expire           bool
 	ExpiresAt        time.Time
 }
 
-func (oBuffer *OnionBuffer) Destroy() error {
-	oBuffer.Lock()
+// Destroy is mostly used to destroy temporary OnionBuffer objects after they
+// have been copied to the store or to remove an individual OnionBuffer
+// from the store.
+func (b *OnionBuffer) Destroy() error {
+	b.Lock()
 	var err error
-	buffer := bytes.NewBuffer(oBuffer.Bytes)
+	buffer := bytes.NewBuffer(b.Bytes)
 	zWriter := zip.NewWriter(buffer)
-	reader := bufio.NewReader(bytes.NewReader(oBuffer.Bytes))
+	reader := bufio.NewReader(bytes.NewReader(b.Bytes))
 	chunk := make([]byte, 1)
 	// Lock memory allotted to chunk from being used in SWAP
 	if err := syscall.Mlock(chunk); err != nil {
 		return err
 	}
-	bufFile, _ := zWriter.Create(oBuffer.Name)
+	bufFile, _ := zWriter.Create(b.Name)
 	for {
 		if _, err = reader.Read(chunk); err != nil {
 			break
@@ -50,16 +54,17 @@ func (oBuffer *OnionBuffer) Destroy() error {
 	} else {
 		err = nil
 	}
-	if err := syscall.Munlock(oBuffer.Bytes); err != nil {
+	if err := syscall.Munlock(b.Bytes); err != nil {
 		return err
 	}
-	oBuffer.Unlock()
+	b.Unlock()
 	return nil
 }
 
-func (oBuffer *OnionBuffer) IsExpired() bool {
-	if oBuffer.Expire {
-		if oBuffer.ExpiresAt.After(time.Now()) {
+// IsExpired is used to check if an OnionBuffer is expired or not.
+func (b *OnionBuffer) IsExpired() bool {
+	if b.Expire {
+		if b.ExpiresAt.After(time.Now()) {
 			return false
 		}
 		return true
@@ -67,12 +72,15 @@ func (oBuffer *OnionBuffer) IsExpired() bool {
 	return false
 }
 
-func (oBuffer *OnionBuffer) SetExpiration(expiration string) error {
+// SetExpiration is used to set the expiration duration of the OnionBuffer.
+func (b *OnionBuffer) SetExpiration(expiration string) error {
+	b.Lock()
 	t, err := time.ParseDuration(expiration)
 	if err != nil {
 		return err
 	}
-	oBuffer.Expire = true
-	oBuffer.ExpiresAt = time.Now().Add(t)
+	b.Expire = true
+	b.ExpiresAt = time.Now().Add(t)
+	b.Unlock()
 	return nil
 }

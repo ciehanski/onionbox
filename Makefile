@@ -8,6 +8,9 @@ stop:
 	docker container rm $(docker container ls -aq)
 exec:
 	docker exec -it onionbox bash
+prof:
+	docker cp onionbox:/cpu.prof . && \
+	docker cp onionbox:/mem.prof .
 linux: # Builds a binary for linux
 	GOOS=linux GOARCH=amd64 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o $(UNIX_BINARY) . && \
 	mv $(UNIX_BINARY) ../$(UNIX_BINARY) && \
