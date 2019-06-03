@@ -1,7 +1,7 @@
 module onionbox
 
 require (
-	github.com/Pallinder/go-randomdata v1.1.0
+	github.com/Pallinder/go-randomdata v1.2.0
 	github.com/cretz/bine v0.1.0
 	github.com/ipsn/go-libtor v0.0.0-20190118221740-0b3507cf026e
 	github.com/stretchr/testify v1.3.0 // indirect
