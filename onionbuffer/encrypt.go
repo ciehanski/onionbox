@@ -1,4 +1,4 @@
-package onion_buffer
+package onionbuffer
 
 import (
 	"crypto/aes"
@@ -8,7 +8,10 @@ import (
 )
 
 func Encrypt(data []byte, passphrase string) ([]byte, error) {
-	block, _ := aes.NewCipher([]byte(createHash(passphrase)))
+	block, err := aes.NewCipher([]byte(createHash(passphrase)))
+	if err != nil {
+		return nil, err
+	}
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err

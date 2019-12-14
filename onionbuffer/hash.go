@@ -1,4 +1,4 @@
-package onion_buffer
+package onionbuffer
 
 import (
 	"crypto/md5"

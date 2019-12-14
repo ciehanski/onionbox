@@ -1,18 +1,5 @@
 version: "3.7"
 services:
-  dnscrypt:
-    environment:
-      - EXTERNAL_IP=${EXTERNAL_IP}
-    container_name: dnscrypt
-    image: jedisct1/dnscrypt-server
-    ports:
-      - 443:443/tcp
-      - 443:443/udp
-    expose:
-      - 443/tcp
-      - 443/udp
-    restart: unless-stopped
-    command: init -N onionbox.com -E ${EXTERNAL_IP}:443
   onionbox:
     build: .
     container_name: onionbox
@@ -20,8 +7,6 @@ services:
       - 80:80
     expose:
       - 80
-    links:
-      - dnscrypt:dnscrypt
-    dns: dnscrypt:443
-    depends_on:
-      - dnscrypt
+    working_dir: /onionbox
+    volumes:
+      - .:/onionbox
