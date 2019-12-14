@@ -150,6 +150,7 @@ func (b *OnionBuffer) Mlock() error {
 		// Advise the kernel not to dump. Ignore failure.
 		// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
 		// https://godoc.org/golang.org/x/sys/unix
+		// TODO: causes error
 		unix.Madvise(b.Bytes, 0x10)
 		if err := unix.Mlock(b.Bytes); err != nil { // Lock memory allotted to chunk from being used in SWAP
 			return err

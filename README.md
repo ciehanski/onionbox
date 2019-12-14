@@ -1,4 +1,4 @@
-# onionbox [![Build Status](https://travis-ci.com/ciehanski/onionbox.svg?branch=master)](https://travis-ci.com/ciehanski/onionbox) [![Go Report Card](https://goreportcard.com/badge/github.com/ciehanski/onionbox)](https://goreportcard.com/report/github.com/ciehanski/onionbox) [![codecov](https://codecov.io/gh/ciehanski/onionbox/branch/master/graph/badge.svg)](https://codecov.io/gh/ciehanski/onionbox)
+# onionbox [![Build Status](https://travis-ci.com/ciehanski/onionbox.svg?branch=master)](https://travis-ci.com/ciehanski/onionbox) [![Go Report Card](https://goreportcard.com/badge/github.com/ciehanski/onionbox)](https://goreportcard.com/report/github.com/ciehanski/onionbox) [![Coverage Status](https://coveralls.io/repos/github/ciehanski/onionbox/badge.svg?branch=master)](https://coveralls.io/github/ciehanski/onionbox?branch=master)
 
 A basic implementation of [OnionShare](https://github.com/micahflee/onionshare) in Go.
 Mostly built as a fun project, onionbox is still a WIP so usage is not guaranteed secure, *yet*.
@@ -23,13 +23,11 @@ of course deploy onionbox to any cloud provider of your choosing.
 - Static binary! Woo!
 
 ## TODO:
-- [ ] Implement more tests
+- [x] Implement more tests
 - [ ] Implement usage of *multipart.Reader
 - [ ] Android support (build almost working)
 - [ ] Windows support (needs testing)
 - [x] ARM support
-- [ ] Get a docker-compose config working with a dnscrypt-proxy. Maybe overkill or moot
-but sounds cool as hell, right?
 
 ## Contributing:
 

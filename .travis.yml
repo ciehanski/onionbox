@@ -1,15 +1,72 @@
 language: go
+go: 1.13.x
+os: linux
+dist: xenial
 sudo: false
 install: true
-os:
-  - linux
-dist: xenial
-go:
-  - 1.11.x
-env:
-  - GO111MODULE=on
+
+stages:
+  - name: deploy
+    if: branch = master
+
+matrix:
+  include:
+    - name: linux-amd64
+      env: GOOS=linux GOARCH=amd64 BINARY=linux-amd64
+    - name: linux-arm64
+      env: GOOS=linux GOARCH=arm64 BINARY=linux-arm64
+    - name: linux-arm
+      env: GOOS=linux GOARCH=arm BINARY=linux-arm
+    - name: darwin-amd64
+      env: GOOS=darwin GOARCH=amd64 BINARY=darwin-amd64
+    - name: darwin-386
+      env: GOOS=darwin GOARCH=386 BINARY=darwin-386
+    - name: freebsd-amd64
+      env: GOOS=freebsd GOARCH=amd64 BINARY=freebsd-amd64
+    - name: freebsd-386
+      env: GOOS=freebsd GOARCH=386 BINARY=freebsd-386
+    - name: freebsd-arm
+      env: GOOS=freebsd GOARCH=arm BINARY=freebsd-arm
+    - name: windows-amd64
+      env: GOOS=windows GOARCH=amd64 BINARY=windows-amd64.exe
+    - name: windows-386
+      env: GOOS=windows GOARCH=386 BINARY=windows-386.exe
+    - name: linux-386
+      env: GOOS=linux GOARCH=386 BINARY=linux-386
+    - name: android
+      env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+      before_script:
+        - sudo apt update && sudo apt-get install default-jdk android-sdk
+        - mkdir ndk && wget -q -c https://dl.google.com/android/repository/android-ndk-r19-linux-x86_64.zip
+        - unzip -qq -d ndk android-ndk-r19-linux-x86_64.zip
+        - sdkmanager ndk-bundle
+        - go get -u -a -v -x github.com/ipsn/go-libtor
+        - go get golang.org/x/mobile/cmd/gomobile
+        - gomobile init -ndk ndk
+      script:
+        - go test -v -race -bench -cpu=1,2,4 ./...
+        - gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
+  fast_finish: true
+  allow_failures:
+    - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+
 before_script:
+  - export GOPATH=
   - go get -u -a -v -x github.com/ipsn/go-libtor
-  - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -gcflags=-m -a -tags netgo -ldflags '-w -extldflags "-static"' -o onionbox .
+
 script:
-  - go test -v ./...
+  - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
+  - go get -u github.com/mattn/goveralls
+  - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
+  - cd cmd && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o onionbox-${TRAVIS_TAG}-${BINARY} .
+
+deploy:
+  provider: releases
+  api_key: "${GITHUB_PAT}"
+  file:
+    - "${TRAVIS_BUILD_DIR}/cmd/onionbox-${TRAVIS_TAG}-${BINARY}"
+  skip_cleanup: true
+  draft: true
+  on:
+    repo: ciehanski/onionbox
+    tags: true
