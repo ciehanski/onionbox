@@ -51,13 +51,12 @@ matrix:
     - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
 
 before_script:
-  - export GOPATH=
   - go get -u -a -v -x github.com/ipsn/go-libtor
 
 script:
   - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
   - go get -u github.com/mattn/goveralls
-  - ${GOPATH}/bin/goveralls -service=travis-ci -coverprofile=profile.cov
+  - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
   - cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o onionbox-${TRAVIS_TAG}-${BINARY} .
 
 deploy:
