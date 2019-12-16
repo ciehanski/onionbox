@@ -39,7 +39,7 @@ matrix:
         - sudo apt update && sudo apt-get install default-jdk android-sdk
         - mkdir ndk && wget -q -c https://dl.google.com/android/repository/android-ndk-r19-linux-x86_64.zip
         - unzip -qq -d ndk android-ndk-r19-linux-x86_64.zip
-        - sdkmanager ndk-bundle
+        - cd ndk && ./sdkmanager "ndk-bundle"
         - go get -u -a -v -x github.com/ipsn/go-libtor
         - go get golang.org/x/mobile/cmd/gomobile
         - gomobile init -ndk ndk
