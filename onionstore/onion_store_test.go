@@ -3,6 +3,7 @@ package onionstore
 import (
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/ciehanski/onionbox/onionbuffer"
 )
@@ -94,20 +95,20 @@ func BenchmarkNonAppendDestroy(t *testing.B) {
 	}
 }
 
-//func TestDestroyExpiredBuffers(t *testing.T) {
-//	os := NewStore()
-//	testFile, _ := ioutil.ReadFile("../../../tests/alpine.iso")
-//	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroyallexpired", Bytes: testFile, Expire: true, ExpiresAt: time.Now()}
-//	os.Add(oBuf)
-//	go func() {
-//		if err := os.DestroyExpiredBuffers(); err != nil {
-//			if err.Error() != "invalid argument" {
-//				t.Error(err)
-//			}
-//		}
-//	}()
-//	time.Sleep(time.Second * 10)
-//	if len(os.BufferFiles) != 0 {
-//		t.Errorf("Expected empty store, but got %v onionbuffer(s)", len(os.BufferFiles))
-//	}
-//}
+func TestDestroyExpiredBuffers(t *testing.T) {
+	os := NewStore()
+	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
+	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroyexpired", Bytes: testFile, Expire: true, ExpiresAt: time.Now()}
+	os.Add(oBuf)
+	go func() {
+		if err := os.DestroyExpiredBuffers(); err != nil {
+			if err.Error() != "invalid argument" {
+				t.Error(err)
+			}
+		}
+	}()
+	time.Sleep(time.Second * 10)
+	if len(os.BufferFiles) != 0 {
+		t.Errorf("Expected empty store, but got %v onionbuffer(s)", len(os.BufferFiles))
+	}
+}

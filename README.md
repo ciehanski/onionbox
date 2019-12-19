@@ -9,7 +9,7 @@ each uploaded file are written to an individual **zip buffer** (in memory, and a
 to the response for download. Zip was chosen since it is the most universal archiving
 standard that is supported by all operating systems.
 - You have the ability to encrypt the uploaded files' bytes if
-the content is extra sensitive. GCM is used for encryption. This means, while stored in memory, the files' bytes
+the content is extra sensitive. AES-GCM-256 is used for encryption. This means, while stored in memory, the files' bytes
 will be encrypted as well. **If password encryption is enabled, recipients will need to enter the correct password 
 before the download.**
 - You have the ability to limit the number of downloads per download link

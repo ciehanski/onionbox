@@ -1,12 +1,13 @@
 package onionbuffer
 
 import (
-	"crypto/md5"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/hex"
 )
 
 func createHash(key string) string {
-	hasher := md5.New()
+	hasher := hmac.New(sha256.New, []byte(key))
 	hasher.Write([]byte(key))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
