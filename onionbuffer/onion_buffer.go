@@ -39,6 +39,7 @@ func (b *OnionBuffer) Destroy() error {
 	if err != nil {
 		return err
 	}
+
 	for {
 		if _, err = reader.Read(chunk); err != nil {
 			break
@@ -53,9 +54,11 @@ func (b *OnionBuffer) Destroy() error {
 	} else {
 		err = nil
 	}
+
 	if err := b.Munlock(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
