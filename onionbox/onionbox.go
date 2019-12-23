@@ -74,7 +74,7 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 	}
 
 	// Start listening over onion service
-	onionSvc, err := ob.listenTor(t, ctx)
+	onionSvc, err := ob.listenTor(ctx, t)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -117,7 +117,7 @@ func startTor(logger io.Writer) (*tor.Tor, error) {
 	return t, nil
 }
 
-func (ob *Onionbox) listenTor(t *tor.Tor, ctx context.Context) (*tor.OnionService, error) {
+func (ob *Onionbox) listenTor(ctx context.Context, t *tor.Tor) (*tor.OnionService, error) {
 	// Create an onion service to listen on any port but show as 80
 	onionSvc, err := t.Listen(ctx, &tor.ListenConf{
 		Version3:    ob.TorVersion3,

@@ -3,11 +3,12 @@ package onionbuffer
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
 )
 
 func Decrypt(data []byte, passphrase string) ([]byte, error) {
-	key := []byte(createHash(passphrase))
-	block, err := aes.NewCipher(key)
+	s := sha256.Sum256([]byte(passphrase))
+	block, err := aes.NewCipher(s[:])
 	if err != nil {
 		return nil, err
 	}

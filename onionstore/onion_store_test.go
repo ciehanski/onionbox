@@ -78,7 +78,7 @@ func BenchmarkAppendDestroy(t *testing.B) {
 	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
 	oBuf1 := onionbuffer.OnionBuffer{Name: "testing_appenddestory", Bytes: testFile}
 	s.Add(oBuf1)
-	for i, _ := range s.BufferFiles {
+	for i := range s.BufferFiles {
 		s.BufferFiles = append(s.BufferFiles[:i], s.BufferFiles[i+1:]...)
 	}
 }
@@ -88,7 +88,7 @@ func BenchmarkNonAppendDestroy(t *testing.B) {
 	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
 	oBuf1 := onionbuffer.OnionBuffer{Name: "testing_nonappenddestory", Bytes: testFile}
 	s.Add(oBuf1)
-	for i, _ := range s.BufferFiles {
+	for i := range s.BufferFiles {
 		s.BufferFiles[i] = s.BufferFiles[len(s.BufferFiles)-1]
 		s.BufferFiles[len(s.BufferFiles)-1] = &onionbuffer.OnionBuffer{}
 		s.BufferFiles = s.BufferFiles[:len(s.BufferFiles)-1]

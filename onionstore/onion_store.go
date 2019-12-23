@@ -18,7 +18,7 @@ type OnionStore struct {
 	BufferFiles []*onionbuffer.OnionBuffer
 }
 
-// Used to create a nil store.
+// NewStore creates a nil onionstore.
 func NewStore() *OnionStore {
 	return &OnionStore{BufferFiles: make([]*onionbuffer.OnionBuffer, 0)}
 }
@@ -76,9 +76,6 @@ func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 			}
 			// Remove from store
 			s.BufferFiles = append(s.BufferFiles[:i], s.BufferFiles[i+1:]...)
-			//s.BufferFiles[i] = s.BufferFiles[len(s.BufferFiles)-1]
-			//s.BufferFiles[len(s.BufferFiles)-1] = &onionbuffer.OnionBuffer{}
-			//s.BufferFiles = s.BufferFiles[:len(s.BufferFiles)-1]
 			// Free niled allotted memory for SWAP usage
 			if err := f.Munlock(); err != nil {
 				return err
