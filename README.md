@@ -1,4 +1,5 @@
 # onionbox [![Build Status](https://travis-ci.com/ciehanski/onionbox.svg?branch=master)](https://travis-ci.com/ciehanski/onionbox)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox?ref=badge_shield)
 
 A basic implementation of [OnionShare](https://github.com/micahflee/onionshare) in Go.
 Mostly built as a fun project, onionbox is still a WIP so usage is not guaranteed secure, *yet*.
@@ -52,3 +53,5 @@ to interface with the Tor API. Big thanks to these guys or this project would no
 
 ## License:
 - MIT
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox?ref=badge_large)
