@@ -95,7 +95,7 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		wg.Add(len(files))
 
 		go func() { // Write all files in queue to memory
-			if err := onionbuffer.WriteFilesToBuffers(zWriter, uploadQueue, wg); err != nil {
+			if err := onionbuffer.WriteFilesToBuffer(zWriter, uploadQueue, wg); err != nil {
 				ob.Logf("Error writing files in queue to memory: %v", err)
 				http.Error(w, "Error writing your files to memory.", http.StatusInternalServerError)
 				return
@@ -195,7 +195,9 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 		oBuffer.Lock()
 		defer oBuffer.Unlock()
 		if err := oBuffer.Destroy(); err != nil {
-			ob.Logf("Error destroying temporary onionbuffer: %v", err)
+			if err.Error() != "invalid argument" {
+				ob.Logf("Error destroying temporary onionbuffer: %v", err)
+			}
 		}
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)

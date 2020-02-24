@@ -1,1 +1,4 @@
-         .idea
+.idea
+cmd/onionbox/onionbox-linux
+cmd/onionbox/onionbox-windows
+cmd/onionbox/onionbox-darwin

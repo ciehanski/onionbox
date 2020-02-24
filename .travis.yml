@@ -17,6 +17,8 @@ matrix:
       env: GOOS=linux GOARCH=arm64 BINARY=linux-arm64
     - name: linux-arm
       env: GOOS=linux GOARCH=arm BINARY=linux-arm
+    - name: linux-386
+      env: GOOS=linux GOARCH=386 BINARY=linux-386
     - name: darwin-amd64
       env: GOOS=darwin GOARCH=amd64 BINARY=darwin-amd64
     - name: darwin-386

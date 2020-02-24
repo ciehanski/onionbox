@@ -1,10 +1,8 @@
 package onionstore
 
 import (
-	"crypto/subtle"
-	"fmt"
+	"errors"
 	"runtime"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -15,12 +13,12 @@ import (
 
 type OnionStore struct {
 	sync.RWMutex
-	BufferFiles []*onionbuffer.OnionBuffer
+	BufferFiles map[string]*onionbuffer.OnionBuffer
 }
 
 // NewStore creates a nil onionstore.
 func NewStore() *OnionStore {
-	return &OnionStore{BufferFiles: make([]*onionbuffer.OnionBuffer, 0)}
+	return &OnionStore{BufferFiles: make(map[string]*onionbuffer.OnionBuffer, 0)}
 }
 
 func (s *OnionStore) Add(b onionbuffer.OnionBuffer) error {
@@ -28,13 +26,13 @@ func (s *OnionStore) Add(b onionbuffer.OnionBuffer) error {
 	defer b.Unlock()
 
 	s.Lock()
-	s.BufferFiles = append(s.BufferFiles, &b)
+	s.BufferFiles[b.Name] = &b
 	s.Unlock()
 	// Advise the kernel not to dump. Ignore failure.
 	// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
 	// https://godoc.org/golang.org/x/sys/unix
 	if runtime.GOOS != "windows" {
-		unix.Madvise(b.Bytes, 0x10)
+		_ = unix.Madvise(b.Bytes, 0x10)
 	}
 	// Lock bytes from SWAP
 	if err := b.Mlock(); err != nil {
@@ -46,61 +44,46 @@ func (s *OnionStore) Add(b onionbuffer.OnionBuffer) error {
 func (s *OnionStore) Get(bufName string) *onionbuffer.OnionBuffer {
 	s.RLock()
 	defer s.RUnlock()
-	for _, f := range s.BufferFiles {
-		if subtle.ConstantTimeCompare([]byte(f.Name), []byte(bufName)) == 1 {
-			return f
-		}
-	}
-	return nil
+	return s.BufferFiles[bufName]
 }
 
 func (s *OnionStore) Exists(bufName string) bool {
 	s.RLock()
 	defer s.RUnlock()
-	for _, f := range s.BufferFiles {
-		if subtle.ConstantTimeCompare([]byte(f.Name), []byte(bufName)) == 1 {
-			return true
-		}
-	}
-	return false
+	_, exists := s.BufferFiles[bufName]
+	return exists
 }
 
 func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
-	for i, f := range s.BufferFiles {
-		if subtle.ConstantTimeCompare([]byte(f.Name), []byte(b.Name)) == 1 {
-			f.Lock()
-			if err := b.Destroy(); err != nil {
-				return err
-			}
-			// Remove from store
-			s.BufferFiles = append(s.BufferFiles[:i], s.BufferFiles[i+1:]...)
-			// Free niled allotted memory for SWAP usage
-			if err := f.Munlock(); err != nil {
-				return err
-			}
-			f.Unlock()
-			// Force garbage collection
-			// debug.FreeOSMemory()
-			break
-		}
+
+	if err := b.Destroy(); err != nil {
+		return err
 	}
+	// Remove from store
+	delete(s.BufferFiles, b.Name)
+	// Free niled allotted memory for SWAP usage
+	if err := s.BufferFiles[b.Name].Munlock(); err != nil {
+		return err
+	}
+
+	// Force garbage collection
+	runtime.GC()
+
 	return nil
 }
 
 func (s *OnionStore) DestroyAll() error {
-	if s != nil {
-		for i := len(s.BufferFiles) - 1; i >= 0; i-- {
-			f := s.BufferFiles[i]
-			if err := s.Destroy(f); err != nil {
+	if len(s.BufferFiles) != 0 {
+		for _, b := range s.BufferFiles {
+			if err := s.Destroy(b); err != nil {
 				return err
 			}
 		}
-		// Force garbage collection
-		debug.FreeOSMemory()
+		return nil
 	}
-	return nil
+	return errors.New("store already empty")
 }
 
 // DestroyExpiredBuffers will indefinitely loop through the store and destroy
@@ -114,13 +97,9 @@ func (s *OnionStore) DestroyExpiredBuffers() error {
 				for _, f := range s.BufferFiles {
 					if f.Expire {
 						if f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
-							// TODO: debug, remove
-							fmt.Println(f.Name)
 							if err := s.Destroy(f); err != nil {
 								return err
 							}
-							// Force garbage collection
-							// debug.FreeOSMemory()
 						}
 					}
 				}

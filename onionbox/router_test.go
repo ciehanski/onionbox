@@ -6,37 +6,46 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ciehanski/onionbox/onionstore"
 )
 
 func TestRouter(t *testing.T) {
-	// Create new httptest writer
-	w := httptest.NewRecorder()
-
 	tests := []struct {
 		name         string
-		r            *http.Request
+		req          *http.Request
 		expectedCode int
 	}{
 		{
-			name:         "1: Test Download Invalid",
-			r:            newRequest(t, "GET", "/tastyred-tastyblue", nil),
-			expectedCode: 404,
+			name:         "1: Test Upload Valid",
+			req:          newRequest(t, "GET", "/", nil),
+			expectedCode: http.StatusOK,
 		},
 		{
 			name:         "2: Test Download Invalid",
-			r:            newRequest(t, "GET", "/tastyred7", nil),
-			expectedCode: 404,
+			req:          newRequest(t, "GET", "/tastyred-tastyblue", nil),
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "3: Test Download Invalid",
-			r:            newRequest(t, "GET", "/Uglyduck", nil),
-			expectedCode: 404,
+			req:          newRequest(t, "GET", "/tastyred7", nil),
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "4: Test Download Invalid",
+			req:          newRequest(t, "GET", "/Uglyduck", nil),
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
+	ob := Onionbox{Store: onionstore.NewStore()}
+	handler := http.HandlerFunc(ob.Router)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			http.DefaultServeMux.ServeHTTP(w, tt.r)
+			// Create new httptest writer
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, tt.req)
 			// check for expected response here.
 			if w.Code != tt.expectedCode {
 				t.Error(fmt.Sprintf("Expected response code %v, got %v", tt.expectedCode, w.Code))

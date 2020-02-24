@@ -82,9 +82,9 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 	// Init serving
 	http.HandleFunc("/", ob.Router)
 	ob.Server = &http.Server{
-		// TODO: comeback. Tor is quite slow and depending on the size of the files being
-		//  transferred, the server could timeout. I would like to keep set timeouts, but
-		//  will need to find a sweet spot or enable an option for large transfers.
+		// Tor is quite slow and depending on the size of the files being
+		// transferred, the server could timeout. I would like to keep set timeouts, but
+		// will need to find a sweet spot or enable an option for large transfers.
 		IdleTimeout:  time.Minute * 3,
 		ReadTimeout:  time.Minute * 3,
 		WriteTimeout: time.Minute * 3,

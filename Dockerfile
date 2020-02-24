@@ -1,4 +1,4 @@
-FROM golang:1.13.5
+FROM golang:1.13.8
 COPY . /onionbox
 WORKDIR /onionbox
 RUN go get github.com/cespare/reflex

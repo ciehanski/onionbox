@@ -66,7 +66,7 @@ import (
 //	wg.Add(len(files))
 //
 //	go func() {
-//		if err := WriteFilesToBuffers(zw, files, wg, 1024); err != nil {
+//		if err := WriteFilesToBuffer(zw, files, wg, 1024); err != nil {
 //			t.Error(err)
 //		}
 //	}()
@@ -92,8 +92,25 @@ import (
 //	}
 //}
 
+func TestDestroy(t *testing.T) {
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
+	buf := OnionBuffer{Name: "testing_destroy", Bytes: testFile}
+	err := buf.Destroy()
+	if err != nil {
+		if err.Error() != "invalid argument" {
+			t.Error(err)
+		}
+	}
+	if len(buf.Bytes) != 0 {
+		t.Errorf("bytes not destroyed")
+	}
+	if buf.Name == "testing_destory" {
+		t.Error("bytes not destroyed")
+	}
+}
+
 func TestWriteBytesInChunks(t *testing.T) {
-	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	reader := bytes.NewReader(testFile)
 	zb := new(bytes.Buffer)
 	zw := zip.NewWriter(zb)
@@ -107,7 +124,7 @@ func TestWriteBytesInChunks(t *testing.T) {
 }
 
 func BenchmarkWriteBytesInChunks(b *testing.B) {
-	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	reader := bytes.NewReader(testFile)
 	zb := new(bytes.Buffer)
 	zw := zip.NewWriter(zb)
@@ -121,7 +138,7 @@ func BenchmarkWriteBytesInChunks(b *testing.B) {
 }
 
 func BenchmarkSubtleTimeCopy(b *testing.B) {
-	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	zb := make([]byte, len(testFile))
 	for n := 0; n < b.N; n++ {
 		subtle.ConstantTimeCopy(1, zb, testFile)
@@ -129,7 +146,7 @@ func BenchmarkSubtleTimeCopy(b *testing.B) {
 }
 
 func BenchmarkIOCopy(b *testing.B) {
-	testFile, _ := ioutil.ReadFile("../../../tests/gopher.jpg")
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	reader := bytes.NewReader(testFile)
 	zb := new(bytes.Buffer)
 	zw := zip.NewWriter(zb)

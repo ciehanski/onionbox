@@ -3,7 +3,6 @@ package onionbuffer
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
 	"io"
 	"mime/multipart"
 	"runtime"
@@ -30,34 +29,24 @@ type OnionBuffer struct {
 // have been copied to the store or to remove an individual OnionBuffer
 // from the store.
 func (b *OnionBuffer) Destroy() error {
-	var err error
-	buffer := bytes.NewBuffer(b.Bytes)
-	zWriter := zip.NewWriter(buffer)
-	reader := bufio.NewReader(bytes.NewReader(b.Bytes))
-	chunk := make([]byte, 1)
-	bufFile, err := zWriter.Create(b.Name)
-	if err != nil {
-		return err
-	}
+	b.Lock()
+	defer b.Unlock()
 
-	for {
-		if _, err = reader.Read(chunk); err != nil {
-			break
-		}
-		_, err := bufFile.Write([]byte("0"))
-		if err != nil {
-			return err
-		}
-	}
-	if err != io.EOF {
-		return err
-	} else {
-		err = nil
-	}
+	b.Name = ""
+	b.Bytes = nil
+	b.Checksum = ""
+	b.DownloadLimit = 0
+	b.Downloads = 0
+	b.Encrypted = false
+	b.Expire = false
+	b.ExpiresAt = time.Time{}
 
 	if err := b.Munlock(); err != nil {
 		return err
 	}
+
+	// Force garbage collection
+	runtime.GC()
 
 	return nil
 }
@@ -88,7 +77,7 @@ func (b *OnionBuffer) SetExpiration(expiration string) error {
 	return nil
 }
 
-func WriteFilesToBuffers(w *zip.Writer, files chan *multipart.FileHeader, wg *sync.WaitGroup) error {
+func WriteFilesToBuffer(w *zip.Writer, files chan *multipart.FileHeader, wg *sync.WaitGroup) error {
 	for {
 		select {
 		case fileHeader := <-files:
@@ -135,7 +124,7 @@ func writeBytesByChunk(file io.Reader, bufWriter io.Writer, chunkSize int64) err
 		// Advise the kernel not to dump. Ignore failure.
 		// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
 		// https://godoc.org/golang.org/x/sys/unix
-		unix.Madvise(chunk, 0x10)
+		_ = unix.Madvise(chunk, 0x10)
 		if err := unix.Mlock(chunk); err != nil { // Lock memory allotted to chunk from being used in SWAP
 			return err
 		}
@@ -154,7 +143,7 @@ func (b *OnionBuffer) Mlock() error {
 		// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
 		// https://godoc.org/golang.org/x/sys/unix
 		// TODO: causes error
-		unix.Madvise(b.Bytes, 0x10)
+		_ = unix.Madvise(b.Bytes, 0x10)
 		if err := unix.Mlock(b.Bytes); err != nil { // Lock memory allotted to chunk from being used in SWAP
 			return err
 		}

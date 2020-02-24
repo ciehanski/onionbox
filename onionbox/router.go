@@ -20,7 +20,8 @@ func (ob *Onionbox) Router(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			http.Error(w, "Store is empty", http.StatusNotFound)
+			// Do not state the store is empty to the user
+			http.Error(w, "File not found", http.StatusNotFound)
 			return
 		}
 	} else {
