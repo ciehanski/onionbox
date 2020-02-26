@@ -15,7 +15,7 @@ const DownloadHTML = `<!DOCTYPE html>
             <input type="hidden" name="token" value="{{.}}" required/>
             <h4>Enter Password:</h4>
             <input type="password" name="password" required><br>
-            <input type="submit" class="button" value="Download">
+            <input type="submit" class="button is-link" value="Download">
         </form>
 		</center>
     </body>

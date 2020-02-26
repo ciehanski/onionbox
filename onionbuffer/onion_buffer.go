@@ -32,6 +32,10 @@ func (b *OnionBuffer) Destroy() error {
 	b.Lock()
 	defer b.Unlock()
 
+	if err := b.Munlock(); err != nil {
+		return err
+	}
+
 	b.Name = ""
 	b.Bytes = nil
 	b.Checksum = ""
@@ -40,10 +44,6 @@ func (b *OnionBuffer) Destroy() error {
 	b.Encrypted = false
 	b.Expire = false
 	b.ExpiresAt = time.Time{}
-
-	if err := b.Munlock(); err != nil {
-		return err
-	}
 
 	// Force garbage collection
 	runtime.GC()
@@ -158,10 +158,10 @@ func (b *OnionBuffer) Munlock() error {
 		if err := unix.Munlock(b.Bytes); err != nil { // Unlock memory allotted to chunk to be used for SWAP
 			return err
 		}
-		if err := Unallocate(b.Bytes); err != nil {
-			// TODO: causes error
-			return err
-		}
+		//if err := Unallocate(b.Bytes); err != nil {
+		//	// TODO: causes error
+		//	return err
+		//}
 	} else {
 		// Do windows stuff
 	}

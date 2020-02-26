@@ -10,22 +10,22 @@ const UploadHTML = `<!DOCTYPE html>
     </head>
     <body>
 		<center>
-		<br><br><br>
-		<h1 class="title is-1">[onionbox]</h1><br>
-        <h2>Please select the file(s) you would like to securely share:</h2>
-        <form method="post" enctype="multipart/form-data" action="/">
-            <input type="file" name="files" required multiple><br>
-            <input type="hidden" name="token" value="{{.}}" required/>
-			<br>
-            <h3 class="subtitle is-3">Advanced Options</h3>
-            <input type="checkbox" name="password_enabled"> Protect with password: 
-            <input type="password" name="password"><br>
-            <input type="checkbox" name="limit_downloads"> Limit downloads: 
-            <input type="number" name="download_limit"><br>
-            <input type="checkbox" name="expire"> Automatically expire download link (in minutes): 
-            <input type="number" name="expiration_time"><br><br>
-            <input type="submit" class="button is-link" value="Upload">
-        </form>
+			<br><br><br>
+			<h1 class="title is-1">[onionbox]</h1><br>
+			<h2>Please select the file(s) you would like to securely share:</h2>
+			<form method="post" enctype="multipart/form-data" action="/">
+				<input type="file" name="files" required multiple><br>
+				<input type="hidden" name="token" value="{{.}}" required/>
+				<br>
+				<h3 class="subtitle is-3">Advanced Options</h3>
+				<input type="checkbox" name="password_enabled"> Protect with password: 
+				<input type="password" name="password"><br>
+				<input type="checkbox" name="limit_downloads"> Limit downloads: 
+				<input type="number" name="download_limit"><br>
+				<input type="checkbox" name="expire"> Automatically expire download link (in minutes): 
+				<input type="number" name="expiration_time"><br><br>
+				<input type="submit" class="button is-link" value="Upload">
+			</form>
 		</center>
     </body>
 </html>`

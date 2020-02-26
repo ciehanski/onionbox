@@ -58,16 +58,12 @@ func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
 
-	bufName := b.Name
+	var bufName = b.Name
 	if err := b.Destroy(); err != nil {
 		return err
 	}
 	// Remove from store
 	delete(s.BufferFiles, bufName)
-	// Free niled allotted memory for SWAP usage
-	if err := s.BufferFiles[bufName].Munlock(); err != nil {
-		return err
-	}
 
 	// Force garbage collection
 	runtime.GC()
