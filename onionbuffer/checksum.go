@@ -1,25 +1,23 @@
-package onion_buffer
+package onionbuffer
 
 import (
 	"bufio"
 	"bytes"
 	"crypto/md5"
+	"crypto/subtle"
 	"encoding/hex"
 	"io"
 	"syscall"
 )
 
-const chunkSize = 1024
-
-func (of *OnionBuffer) GetChecksum() (string, error) {
-	of.Lock()
+func (b *OnionBuffer) GetChecksum() (string, error) {
+	b.Lock()
 	var count int
 	var err error
 	hash := md5.New()
-	reader := bufio.NewReader(bytes.NewReader(of.Bytes))
-	chunk := make([]byte, chunkSize)
-	// Lock memory allotted to chunk from being used in SWAP
-	if err := syscall.Mlock(chunk); err != nil {
+	reader := bufio.NewReader(bytes.NewReader(b.Bytes))
+	chunk := make([]byte, 1)
+	if err := syscall.Mlock(chunk); err != nil { // Lock memory allotted to chunk from being used in SWAP
 		return "", err
 	}
 	for {
@@ -36,18 +34,15 @@ func (of *OnionBuffer) GetChecksum() (string, error) {
 	} else {
 		err = nil
 	}
-	of.Unlock()
+	b.Unlock()
 	hashInBytes := hash.Sum(nil)[:16]
 	return hex.EncodeToString(hashInBytes), nil
 }
 
-func (of *OnionBuffer) ValidateChecksum() (bool, error) {
-	chksm, err := of.GetChecksum()
+func (b *OnionBuffer) ValidateChecksum() (bool, error) {
+	chksm, err := b.GetChecksum()
 	if err != nil {
 		return false, err
 	}
-	if of.Checksum == chksm {
-		return true, nil
-	}
-	return false, nil
+	return subtle.ConstantTimeCompare([]byte(b.Checksum), []byte(chksm)) == 1, nil
 }
