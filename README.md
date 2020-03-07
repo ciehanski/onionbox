@@ -83,4 +83,4 @@ creation of a Go-friendly static Tor lib which utilizes [bine](https://github.co
 to interface with the Tor API. Big thanks to these guys or this project would not be possible.
 
 ## License:
-- MIT
+- AGPLv3
