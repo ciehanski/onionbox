@@ -12,6 +12,8 @@ github.com/ipsn/go-libtor v1.0.183 h1:pH+e7XgF81QEoNt1svtu3RJJgLbWcgXfNP41Wttehz
 github.com/ipsn/go-libtor v1.0.183/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
 github.com/ipsn/go-libtor v1.0.185 h1:AzKyJ0CszvS/jDc67Y+5dAHpiRijp/QwbN96yGlFxJo=
 github.com/ipsn/go-libtor v1.0.185/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
+github.com/ipsn/go-libtor v1.0.194 h1:KRWd60W4q/8iiqPnDGaszXcT1gcepgEdTyaaQtqWAW8=
+github.com/ipsn/go-libtor v1.0.194/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
 github.com/natefinch/lumberjack v2.0.0+incompatible h1:4QJd3OLAMgj7ph+yZTuX13Ld4UpgHp07nNdFX7mqFfM=
 github.com/natefinch/lumberjack v2.0.0+incompatible/go.mod h1:Wi9p2TTF5DG5oU+6YfsmYQpsTIOm0B1VNzQg9Mw6nPk=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
