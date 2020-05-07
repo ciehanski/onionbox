@@ -18,15 +18,15 @@ type OnionStore struct {
 
 // NewStore creates a nil onionstore.
 func NewStore() *OnionStore {
-	return &OnionStore{BufferFiles: make(map[string]*onionbuffer.OnionBuffer, 0)}
+	return &OnionStore{BufferFiles: make(map[string]*onionbuffer.OnionBuffer)}
 }
 
-func (s *OnionStore) Add(b onionbuffer.OnionBuffer) error {
+func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
 	b.Lock()
 	defer b.Unlock()
 
 	s.Lock()
-	s.BufferFiles[b.Name] = &b
+	s.BufferFiles[b.Name] = b
 	s.Unlock()
 	// Advise the kernel not to dump. Ignore failure.
 	// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
