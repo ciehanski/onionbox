@@ -62,19 +62,21 @@ func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
 
+	b.RLock()
 	if s.Exists(b.Name) {
 		var bufName = b.Name
-		if err := b.Destroy(); err != nil {
-			return err
-		}
+
 		// Remove from store
 		delete(s.BufferFiles, bufName)
 
-		// Force garbage collection
-		runtime.GC()
+		// Destroy the buffer itself
+		if err := b.Destroy(); err != nil {
+			return err
+		}
 
 		return nil
 	}
+	b.RUnlock()
 
 	return errors.New("onionbuffer does not exist")
 }
