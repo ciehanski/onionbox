@@ -1,16 +1,17 @@
 package onionstore
 
 import (
-	"github.com/ciehanski/onionbox/onionbuffer"
 	"io/ioutil"
 	"testing"
+
+	"github.com/ciehanski/onionbox/onionbuffer"
 )
 
 func TestGet(t *testing.T) {
 	os := NewStore()
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_get", Bytes: testFile}
-	_ = os.Add(oBuf)
+	_ = os.Add(&oBuf)
 	if getOBuf := os.Get("testing_get"); getOBuf == nil {
 		t.Error("Onion buffer not expected to be nil")
 	}
@@ -20,7 +21,7 @@ func TestExists(t *testing.T) {
 	os := NewStore()
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_exists", Bytes: testFile}
-	_ = os.Add(oBuf)
+	_ = os.Add(&oBuf)
 	if !os.Exists("testing_exists") {
 		t.Error("Onion buffer should exist")
 	}
@@ -30,7 +31,7 @@ func TestAdd(t *testing.T) {
 	os := NewStore()
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_add", Bytes: testFile}
-	if err := os.Add(oBuf); err != nil {
+	if err := os.Add(&oBuf); err != nil {
 		t.Error(err)
 	}
 	if len(os.BufferFiles["testing_add"].Bytes) == 0 {
@@ -48,7 +49,7 @@ func TestDestroy(t *testing.T) {
 	os := NewStore()
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroy", Bytes: testFile}
-	_ = os.Add(oBuf)
+	_ = os.Add(&oBuf)
 	if err := os.Destroy(&oBuf); err != nil {
 		if err.Error() != "invalid argument" {
 			t.Error(err)
@@ -69,10 +70,10 @@ func TestDestroyAll(t *testing.T) {
 	oBuf2 := onionbuffer.OnionBuffer{Name: "testing_destroyall2", Bytes: testFile}
 	oBuf3 := onionbuffer.OnionBuffer{Name: "testing_destroyall3", Bytes: testFile}
 	oBuf4 := onionbuffer.OnionBuffer{Name: "testing_destroyall4", Bytes: testFile}
-	_ = os.Add(oBuf1)
-	_ = os.Add(oBuf2)
-	_ = os.Add(oBuf3)
-	_ = os.Add(oBuf4)
+	_ = os.Add(&oBuf1)
+	_ = os.Add(&oBuf2)
+	_ = os.Add(&oBuf3)
+	_ = os.Add(&oBuf4)
 
 	if err := os.DestroyAll(); err != nil {
 		if err.Error() != "invalid argument" {
