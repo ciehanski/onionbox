@@ -13,7 +13,7 @@ func (ob *Onionbox) Router(w http.ResponseWriter, r *http.Request) {
 		ob.upload(w, r)
 	} else if matches := downloadURLreg.FindStringSubmatch(r.URL.Path[1:]); matches != nil {
 		if ob.Store != nil {
-			if _, err := ob.Store.Get(r.URL.Path[1:]); err != nil {
+			if buf := ob.Store.Get(r.URL.Path[1:]); buf != nil {
 				ob.download(w, r)
 			} else {
 				http.Error(w, "File not found", http.StatusNotFound)

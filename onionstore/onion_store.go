@@ -45,15 +45,10 @@ func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
 	return nil
 }
 
-func (s *OnionStore) Get(bufName string) (*onionbuffer.OnionBuffer, error) {
+func (s *OnionStore) Get(bufName string) *onionbuffer.OnionBuffer {
 	s.RLock()
 	defer s.RUnlock()
-
-	if s.Exists(bufName) {
-		return s.BufferFiles[bufName], nil
-	}
-
-	return nil, errors.New("onionbuffer does not exist")
+	return s.BufferFiles[bufName]
 }
 
 func (s *OnionStore) Exists(bufName string) bool {

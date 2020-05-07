@@ -12,7 +12,7 @@ func TestGet(t *testing.T) {
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_get", Bytes: testFile}
 	_ = os.Add(&oBuf)
-	if _, err := os.Get("testing_get"); err != nil {
+	if getOBuf := os.Get("testing_get"); getOBuf == nil {
 		t.Error("Onion buffer not expected to be nil")
 	}
 }
@@ -55,7 +55,7 @@ func TestDestroy(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	if _, err := os.Get(oBuf.Name); err != nil {
+	if b := os.Get(oBuf.Name); b != nil {
 		t.Error("should have failed to get after destroy")
 	}
 	if len(os.BufferFiles["testing_destroy"].Bytes) != 0 {
@@ -81,7 +81,7 @@ func TestDestroyAll(t *testing.T) {
 		}
 	}
 	for i := range os.BufferFiles {
-		if _, err := os.Get(i); err == nil {
+		if b := os.Get(i); b != nil {
 			t.Error("should have failed to get after destroy")
 		}
 	}
