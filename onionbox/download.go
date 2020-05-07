@@ -15,7 +15,12 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 
-		oBuffer := ob.Store.Get(r.URL.Path[1:])
+		oBuffer, err := ob.Store.Get(r.URL.Path[1:])
+		if err != nil {
+			ob.Logf("File %s not found in store", oBuffer.Name)
+			http.Error(w, "Error finding requested file.", http.StatusInternalServerError)
+			return
+		}
 
 		if oBuffer.Encrypted {
 			csrf, err := createCSRF()
@@ -104,8 +109,8 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		oBuffer := ob.Store.Get(r.URL.Path[1:])
-		if oBuffer == nil {
+		oBuffer, err := ob.Store.Get(r.URL.Path[1:])
+		if err != nil {
 			ob.Logf("File %s not found in store", oBuffer.Name)
 			http.Error(w, "Error finding requested file.", http.StatusInternalServerError)
 			return

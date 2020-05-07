@@ -22,8 +22,12 @@ func NewStore() *OnionStore {
 }
 
 func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
+	// Lock the onionbuffer to avoid conflicts
 	b.Lock()
 	defer b.Unlock()
+
+	// Should we check if onionbuffer already exists
+	// or continue to simply overwrite the mapping?
 
 	s.Lock()
 	s.BufferFiles[b.Name] = b
@@ -41,10 +45,15 @@ func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
 	return nil
 }
 
-func (s *OnionStore) Get(bufName string) *onionbuffer.OnionBuffer {
+func (s *OnionStore) Get(bufName string) (*onionbuffer.OnionBuffer, error) {
 	s.RLock()
 	defer s.RUnlock()
-	return s.BufferFiles[bufName]
+
+	if s.Exists(bufName) {
+		return s.BufferFiles[bufName], nil
+	}
+
+	return nil, errors.New("onionbuffer does not exist")
 }
 
 func (s *OnionStore) Exists(bufName string) bool {
@@ -58,17 +67,21 @@ func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
 
-	var bufName = b.Name
-	if err := b.Destroy(); err != nil {
-		return err
+	if s.Exists(b.Name) {
+		var bufName = b.Name
+		if err := b.Destroy(); err != nil {
+			return err
+		}
+		// Remove from store
+		delete(s.BufferFiles, bufName)
+
+		// Force garbage collection
+		runtime.GC()
+
+		return nil
 	}
-	// Remove from store
-	delete(s.BufferFiles, bufName)
 
-	// Force garbage collection
-	runtime.GC()
-
-	return nil
+	return errors.New("onionbuffer does not exist")
 }
 
 func (s *OnionStore) DestroyAll() error {
@@ -80,6 +93,7 @@ func (s *OnionStore) DestroyAll() error {
 		}
 		return nil
 	}
+
 	return errors.New("store already empty")
 }
 
