@@ -18,15 +18,21 @@ type OnionStore struct {
 
 // NewStore creates a nil onionstore.
 func NewStore() *OnionStore {
-	return &OnionStore{BufferFiles: make(map[string]*onionbuffer.OnionBuffer, 0)}
+	return &OnionStore{BufferFiles: make(map[string]*onionbuffer.OnionBuffer)}
 }
 
-func (s *OnionStore) Add(b onionbuffer.OnionBuffer) error {
+func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
+	// Lock the onionbuffer to avoid conflicts
 	b.Lock()
 	defer b.Unlock()
 
+	// Check if onionbuffer already exists
+	if s.Exists(b.Name) {
+		return errors.New("onionbuffer with that name already exists")
+	}
+
 	s.Lock()
-	s.BufferFiles[b.Name] = &b
+	s.BufferFiles[b.Name] = b
 	s.Unlock()
 	// Advise the kernel not to dump. Ignore failure.
 	// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
@@ -54,29 +60,19 @@ func (s *OnionStore) Exists(bufName string) bool {
 	return exists
 }
 
-func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
+func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) {
 	s.Lock()
 	defer s.Unlock()
-
-	var bufName = b.Name
-	if err := b.Destroy(); err != nil {
-		return err
-	}
 	// Remove from store
-	delete(s.BufferFiles, bufName)
-
-	// Force garbage collection
-	runtime.GC()
-
-	return nil
+	if _, ok := s.BufferFiles[b.Name]; ok {
+		delete(s.BufferFiles, b.Name)
+	}
 }
 
 func (s *OnionStore) DestroyAll() error {
-	if len(s.BufferFiles) != 0 {
+	if s.BufferFiles != nil {
 		for _, b := range s.BufferFiles {
-			if err := s.Destroy(b); err != nil {
-				return err
-			}
+			s.Destroy(b)
 		}
 		return nil
 	}
@@ -90,17 +86,13 @@ func (s *OnionStore) DestroyExpiredBuffers() error {
 		select {
 		case <-time.After(time.Second * 5):
 			if s != nil {
-				s.RLock()
 				for _, f := range s.BufferFiles {
 					if f.Expire {
 						if f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
-							if err := s.Destroy(f); err != nil {
-								return err
-							}
+							s.Destroy(f)
 						}
 					}
 				}
-				s.RUnlock()
 			}
 		}
 	}

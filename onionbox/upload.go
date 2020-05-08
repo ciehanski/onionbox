@@ -176,7 +176,7 @@ func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if err := ob.Store.Add(oBuffer); err != nil { // Add OnionBuffer to Store
+		if err := ob.Store.Add(&oBuffer); err != nil { // Add OnionBuffer to Store
 			ob.Logf("Error adding file to store: %v", err)
 			http.Error(w, "Error adding file to store.", http.StatusInternalServerError)
 			return

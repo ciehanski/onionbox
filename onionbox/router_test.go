@@ -3,10 +3,12 @@ package onionbox
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ciehanski/onionbox/onionbuffer"
 	"github.com/ciehanski/onionbox/onionstore"
 )
 
@@ -17,7 +19,7 @@ func TestRouter(t *testing.T) {
 		expectedCode int
 	}{
 		{
-			name:         "1: Test Upload Valid",
+			name:         "1: Test Upload GET",
 			req:          newRequest(t, "GET", "/", nil),
 			expectedCode: http.StatusOK,
 		},
@@ -36,9 +38,19 @@ func TestRouter(t *testing.T) {
 			req:          newRequest(t, "GET", "/Uglyduck", nil),
 			expectedCode: http.StatusNotFound,
 		},
+		//		{
+		//			name:         "5: Test Download Valid",
+		//			req:          newRequest(t, "GET", "/testing_router1", nil),
+		//			expectedCode: http.StatusOK,
+		//		},
+		// Add test for Upload POST
 	}
 
 	ob := Onionbox{Store: onionstore.NewStore()}
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
+	oBuf1 := onionbuffer.OnionBuffer{Name: "testing_router1", Bytes: testFile}
+	_ = ob.Store.Add(&oBuf1)
+
 	handler := http.HandlerFunc(ob.Router)
 
 	for _, tt := range tests {
