@@ -56,9 +56,7 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 			if oBuffer.DownloadLimit != 0 {
 				if oBuffer.Downloads >= oBuffer.DownloadLimit {
 					ob.Logf("Download limit reached for %s", oBuffer.Name)
-					if err := ob.Store.Destroy(oBuffer); err != nil {
-						ob.Logf("Error deleting onion file from Store: %v", err)
-					}
+					ob.Store.Destroy(oBuffer)
 					http.Error(w, "Download limit reached.", http.StatusUnauthorized)
 					return
 				} else {
@@ -118,9 +116,7 @@ func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 
 		if oBuffer.DownloadLimit != 0 {
 			if oBuffer.Downloads >= oBuffer.DownloadLimit {
-				if err := ob.Store.Destroy(oBuffer); err != nil {
-					ob.Logf("Error deleting onionbuffer from store: %v", err)
-				}
+				ob.Store.Destroy(oBuffer)
 				ob.Logf("Download limit reached for %s", oBuffer.Name)
 				http.Error(w, "Download limit reached.", http.StatusUnauthorized)
 				return

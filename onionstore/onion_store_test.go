@@ -3,6 +3,7 @@ package onionstore
 import (
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/ciehanski/onionbox/onionbuffer"
 )
@@ -50,16 +51,9 @@ func TestDestroy(t *testing.T) {
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroy", Bytes: testFile}
 	_ = os.Add(&oBuf)
-	if err := os.Destroy(&oBuf); err != nil {
-		if err.Error() != "invalid argument" {
-			t.Error(err)
-		}
-	}
+	os.Destroy(&oBuf)
 	if b := os.Get(oBuf.Name); b != nil {
 		t.Error("should have failed to get after destroy")
-	}
-	if len(os.BufferFiles["testing_destroy"].Bytes) != 0 {
-		t.Error("bytes not destroyed")
 	}
 }
 
@@ -80,27 +74,25 @@ func TestDestroyAll(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	for i := range os.BufferFiles {
-		if b := os.Get(i); b != nil {
-			t.Error("should have failed to get after destroy")
-		}
+	if len(os.BufferFiles) != 0 {
+		t.Errorf("expected onionstore to be empty")
 	}
 }
 
-//func TestDestroyExpiredBuffers(t *testing.T) {
-//	os := NewStore()
-//	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
-//	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroyexpired", Bytes: testFile, Expire: true, ExpiresAt: time.Now()}
-//	_ = os.Add(oBuf)
-//	go func() {
-//		if err := os.DestroyExpiredBuffers(); err != nil {
-//			if err.Error() != "invalid argument" {
-//				t.Error(err)
-//			}
-//		}
-//	}()
-//	time.Sleep(time.Second * 10)
-//	if b := os.Get(oBuf.Name); b != nil {
-//		t.Errorf("should have failed Get after destroy")
-//	}
-//}
+func TestDestroyExpiredBuffers(t *testing.T) {
+	os := NewStore()
+	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
+	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroyexpired", Bytes: testFile, Expire: true, ExpiresAt: time.Now()}
+	_ = os.Add(&oBuf)
+	go func() {
+		if err := os.DestroyExpiredBuffers(); err != nil {
+			if err.Error() != "invalid argument" {
+				t.Error(err)
+			}
+		}
+	}()
+	time.Sleep(time.Second * 10)
+	if b := os.Get(oBuf.Name); b != nil {
+		t.Errorf("should have failed to get after destroy")
+	}
+}

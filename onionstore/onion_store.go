@@ -26,8 +26,10 @@ func (s *OnionStore) Add(b *onionbuffer.OnionBuffer) error {
 	b.Lock()
 	defer b.Unlock()
 
-	// Should we check if onionbuffer already exists
-	// or continue to simply overwrite the mapping?
+	// Check if onionbuffer already exists
+	if s.Exists(b.Name) {
+		return errors.New("onionbuffer with that name already exists")
+	}
 
 	s.Lock()
 	s.BufferFiles[b.Name] = b
@@ -58,39 +60,22 @@ func (s *OnionStore) Exists(bufName string) bool {
 	return exists
 }
 
-func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
+func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) {
 	s.Lock()
 	defer s.Unlock()
-
-	b.RLock()
-	if s.Exists(b.Name) {
-		var bufName = b.Name
-
-		// Remove from store
-		delete(s.BufferFiles, bufName)
-
-		// Destroy the buffer itself
-		if err := b.Destroy(); err != nil {
-			return err
-		}
-
-		return nil
+	// Remove from store
+	if _, ok := s.BufferFiles[b.Name]; ok {
+		delete(s.BufferFiles, b.Name)
 	}
-	b.RUnlock()
-
-	return errors.New("onionbuffer does not exist")
 }
 
 func (s *OnionStore) DestroyAll() error {
-	if len(s.BufferFiles) != 0 {
+	if s.BufferFiles != nil {
 		for _, b := range s.BufferFiles {
-			if err := s.Destroy(b); err != nil {
-				return err
-			}
+			s.Destroy(b)
 		}
 		return nil
 	}
-
 	return errors.New("store already empty")
 }
 
@@ -101,17 +86,13 @@ func (s *OnionStore) DestroyExpiredBuffers() error {
 		select {
 		case <-time.After(time.Second * 5):
 			if s != nil {
-				s.RLock()
 				for _, f := range s.BufferFiles {
 					if f.Expire {
 						if f.ExpiresAt.Equal(time.Now()) || f.ExpiresAt.Before(time.Now()) {
-							if err := s.Destroy(f); err != nil {
-								return err
-							}
+							s.Destroy(f)
 						}
 					}
 				}
-				s.RUnlock()
 			}
 		}
 	}
