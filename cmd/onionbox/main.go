@@ -65,7 +65,7 @@ func main() {
 		ob.Quit()
 	}
 	defer func() { // Proper server shutdown when program ends
-		if err = ob.Server.Shutdown(context.Background()); err != nil {
+		if err = ob.Server.Shutdown(ctx); err != nil {
 			ob.Logf("Error shutting down onionbox server: %v", err)
 			ob.Quit()
 		}
