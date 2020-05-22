@@ -39,7 +39,14 @@ func (b *OnionBuffer) Destroy() error {
 	}
 
 	// nil out onionbuffer
-	b = nil
+	b.Name = ""
+	b.Bytes = nil
+	b.Checksum = ""
+	b.DownloadLimit = 0
+	b.Downloads = 0
+	b.Encrypted = false
+	b.Expire = false
+	b.ExpiresAt = time.Time{}
 
 	return nil
 }
@@ -83,7 +90,7 @@ func WriteFilesToBuffer(w *zip.Writer, files chan *multipart.FileHeader, wg *syn
 			if err != nil {
 				return err
 			}
-			if err := writeBytesByChunk(file, zBuffer, 256); err != nil { // Write file in chunks to zBuffer
+			if err := writeBytesByChunk(file, zBuffer, 1024); err != nil { // Write file in chunks to zBuffer
 				return err
 			}
 			// Flush zipwriter to write compressed bytes to buffer

@@ -94,9 +94,8 @@ import (
 
 func TestDestroy(t *testing.T) {
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
-	buf := &OnionBuffer{Name: "testing_destroy", Bytes: testFile}
-	err := buf.Destroy()
-	if err != nil {
+	buf := &OnionBuffer{Name: "testing_destory", Bytes: testFile}
+	if err := buf.Destroy(); err != nil {
 		if err.Error() != "invalid argument" {
 			t.Error(err)
 		}
@@ -105,7 +104,7 @@ func TestDestroy(t *testing.T) {
 		t.Errorf("bytes not destroyed")
 	}
 	if buf.Name == "testing_destory" {
-		t.Error("bytes not destroyed")
+		t.Error("name not destroyed")
 	}
 }
 
@@ -160,9 +159,18 @@ func BenchmarkIOCopy(b *testing.B) {
 }
 
 func TestIsExpired(t *testing.T) {
-	ob := OnionBuffer{Name: "testing_expired", Bytes: new(bytes.Buffer).Bytes(), Expire: true, ExpiresAt: time.Now()}
+	ob := &OnionBuffer{Name: "testing_expired", Bytes: new(bytes.Buffer).Bytes(), Expire: true, ExpiresAt: time.Now()}
 	if !ob.IsExpired() {
 		t.Error("Expected result was an expired onionbuffer")
+	}
+}
+
+func TestSetExpiration(t *testing.T) {
+	ob := &OnionBuffer{Name: "testing_set_expiration", Bytes: new(bytes.Buffer).Bytes()}
+	ob.SetExpiration("1s")
+	time.Sleep(2 * time.Second)
+	if !ob.IsExpired() {
+		t.Error("Expected onionbuffer to be expired")
 	}
 }
 
