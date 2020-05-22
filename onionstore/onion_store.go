@@ -60,13 +60,18 @@ func (s *OnionStore) Exists(bufName string) bool {
 	return exists
 }
 
-func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) {
+func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
 	// Remove from store
 	if _, ok := s.BufferFiles[b.Name]; ok {
 		delete(s.BufferFiles, b.Name)
+		if err := b.Destroy(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func (s *OnionStore) DestroyAll() error {
