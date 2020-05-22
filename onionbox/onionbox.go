@@ -14,8 +14,8 @@ import (
 
 	"github.com/cretz/bine/tor"
 	"github.com/ipsn/go-libtor"
-	"github.com/natefinch/lumberjack"
 	"golang.org/x/sys/unix"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/ciehanski/onionbox/onionstore"
 )
