@@ -94,7 +94,7 @@ import (
 
 func TestDestroy(t *testing.T) {
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
-	buf := OnionBuffer{Name: "testing_destroy", Bytes: testFile}
+	buf := &OnionBuffer{Name: "testing_destroy", Bytes: testFile}
 	err := buf.Destroy()
 	if err != nil {
 		if err.Error() != "invalid argument" {
