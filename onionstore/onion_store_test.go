@@ -51,7 +51,11 @@ func TestDestroy(t *testing.T) {
 	testFile, _ := ioutil.ReadFile("../tests/gopher.jpg")
 	oBuf := onionbuffer.OnionBuffer{Name: "testing_destroy", Bytes: testFile}
 	_ = os.Add(&oBuf)
-	os.Destroy(&oBuf)
+	if err := os.Destroy(&oBuf); err != nil {
+		if err.Error() != "invalid argument" {
+			t.Error(err)
+		}
+	}
 	if b := os.Get(oBuf.Name); b != nil {
 		t.Error("should have failed to get after destroy")
 	}
