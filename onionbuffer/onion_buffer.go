@@ -32,21 +32,14 @@ func (b *OnionBuffer) Destroy() error {
 	b.Lock()
 	defer b.Unlock()
 
+	// Unlock bytes assigned to b so they can be reused for SWAP
+	// since b is being deleted
 	if err := b.Munlock(); err != nil {
 		return err
 	}
 
-	b.Name = ""
-	b.Bytes = nil
-	b.Checksum = ""
-	b.DownloadLimit = 0
-	b.Downloads = 0
-	b.Encrypted = false
-	b.Expire = false
-	b.ExpiresAt = time.Time{}
-
-	// Force garbage collection
-	runtime.GC()
+	// nil out onionbuffer
+	b = nil
 
 	return nil
 }
