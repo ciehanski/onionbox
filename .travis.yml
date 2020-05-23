@@ -29,35 +29,45 @@ jobs:
     env: GOOS=windows GOARCH=amd64 BINARY=windows-amd64.exe
   - name: windows-386
     env: GOOS=windows GOARCH=386 BINARY=windows-386.exe
-  - name: android
-    env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+  - language: android
+    name: android
+    env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+    jdk:
+      - oraclejdk9
+    android:
+      components:
+        - tools
+        - build-tools-26.0.2
+        - android-26
+    install:
+      - echo y | sdkmanager 'ndk-bundle'
+      - echo y | sdkmanager 'cmake;3.6.4111459'
+      - echo y | sdkmanager 'lldb;3.0'
     before_script: 
-      - sudo apt update && sudo apt-get install default-jdk android-sdk 
-      # - mkdir ndk && wget -q -c https://dl.google.com/android/repository/android-ndk-r19-linux-x86_64.zip 
-      # - unzip -qq -d ndk android-ndk-r19-linux-x86_64.zip 
-      # - cd ndk && ./sdkmanager "ndk-bundle" 
+      - mkdir cmd/onionbox/bin
       - go get -u -a -v -x github.com/ipsn/go-libtor
+      - go mod download
       - go get golang.org/x/mobile/cmd/gomobile
-      # - gomobile init -ndk ndk
     script:
-      - go test -v -race -bench -cpu=1,2,4 ./...
       - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
   fast_finish: true
   allow_failures:
     - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
 
+# Prepare before build, run tests, upload coverage profile to coveralls.io
 before_script:
   - mkdir cmd/onionbox/bin
   - go get -u -a -v -x github.com/ipsn/go-libtor
-
-script:
-  - cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
-
-after_script:
+  - go mod download
   - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
   - go get -u github.com/mattn/goveralls
   - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
 
+# Run build script
+script:
+  - cd cmd/onionbox && CGO_ENABLED=1 GOOS=${GOOS} GOARCH=${GOARCH} go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
+
+# Deploy to GitHub repo
 deploy:
   provider: releases
   token: 
