@@ -93,14 +93,15 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 		uploadQueue <- fileHeader
 	}
 
-	mmapBytes, err := onionbuffer.Allocate(int(fileSizes))
-	if err != nil {
-		ob.Logf("Error allocating bytes for zip: %v", err)
-		http.Error(w, "Error allocating bytes.", http.StatusInternalServerError)
-		return
-	}
-	zBuffer := bytes.NewBuffer(mmapBytes) // Create buffer for session's in-memory zip file
-	zWriter := zip.NewWriter(zBuffer)     // Create new zip file
+	// mmapBytes, err := onionbuffer.Allocate(int(fileSizes))
+	// if err != nil {
+	// 	ob.Logf("Error allocating bytes for zip: %v", err)
+	// 	http.Error(w, "Error allocating bytes.", http.StatusInternalServerError)
+	// 	return
+	// }
+	// zBuffer := bytes.NewBuffer(mmapBytes) // Create buffer for session's in-memory zip file
+	zBuffer := new(bytes.Buffer)
+	zWriter := zip.NewWriter(zBuffer) // Create new zip file
 
 	wg := new(sync.WaitGroup) // Wait group for sync
 	wg.Add(len(files))

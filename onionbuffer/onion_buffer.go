@@ -110,7 +110,8 @@ func writeBytesByChunk(file io.Reader, bufWriter io.Writer, chunkSize int64) err
 	var count int
 	var err error
 	reader := bufio.NewReader(file) // Read uploaded file
-	chunk, err := Allocate(int(chunkSize))
+	// chunk, err := Allocate(int(chunkSize))
+	chunk := make([]byte, chunkSize)
 	if err != nil {
 		return err
 	}
