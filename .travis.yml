@@ -59,15 +59,18 @@ script:
   - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
   - go get -u github.com/mattn/goveralls
   - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
-  - cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o onionbox-${TRAVIS_TAG}-${BINARY} .
+  - mkdir cmd/onionbox/bin
+  - cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
 
 deploy:
   provider: releases
   api_key: "${GITHUB_PAT}"
-  file:
-    - "${TRAVIS_BUILD_DIR}/cmd/onionbox/onionbox-${TRAVIS_TAG}-${BINARY}"
+  file_glob: true
+  file: cmd/onionbox/bin/*
   skip_cleanup: true
   draft: true
+  name: "${TRAVIS_TAG}"
+  tag_name: "${TRAVIS_TAG}"
   on:
     repo: ciehanski/onionbox
     tags: true
