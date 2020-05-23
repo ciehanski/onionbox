@@ -45,7 +45,12 @@ jobs:
           CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=arm go build -a -installsuffix cgo -ldflags '-s' -o onionbox-freebsd-arm .
           CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-windows-amd64.exe .
           CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-windows-386.exe .
-          CGO_ENABLED=1 GO111MODULE=on GOOS=android GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-android-arm64.aar .
+
+      - name: Build Android
+        id: build-android
+        run: |
+          go get golang.org/x/mobile/cmd/gomobile
+          gomobile bind -v -x .
 
       - name: Test
         id: test
@@ -58,3 +63,11 @@ jobs:
         run: |
           GO111MODULE=off go get -u github.com/mattn/goveralls
           $(go env GOPATH)/bin/goveralls -service=github -coverprofile=profile.cov
+
+      - name: Upload Linux Artifact
+        id: upload-linux-artifact
+        if: success()
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: pigeon-linux-amd64
+          path: cmd/pigeon
