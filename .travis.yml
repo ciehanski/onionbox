@@ -52,7 +52,7 @@ jobs:
       - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
   fast_finish: true
   allow_failures:
-    - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+    - env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
 
 # Prepare before build, run tests, upload coverage profile to coveralls.io
 before_script:
