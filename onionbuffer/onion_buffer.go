@@ -133,9 +133,8 @@ func writeBytesByChunk(file io.Reader, bufWriter io.Writer, chunkSize int64) err
 	}
 	if err != io.EOF { // If not EOF, return the err
 		return err
-	} else { // if EOF, do not return an error
-		err = nil
 	}
+
 	return nil
 }
 
