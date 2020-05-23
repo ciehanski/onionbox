@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
@@ -139,23 +140,26 @@ func writeBytesByChunk(file io.Reader, bufWriter io.Writer, chunkSize int64) err
 }
 
 func (b *OnionBuffer) Mlock() error {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		// Advise the kernel not to dump. Ignore failure.
 		// Unable to reference unix.MADV_DONTDUMP, raw value is 0x10 per:
 		// https://godoc.org/golang.org/x/sys/unix
-		// TODO: causes error
-		_ = unix.Madvise(b.Bytes, 0x10)
+		if err := unix.Madvise(b.Bytes, 0x11); err != nil {
+			return err
+		}
 		if err := unix.Mlock(b.Bytes); err != nil { // Lock memory allotted to chunk from being used in SWAP
 			return err
 		}
 	} else {
-		// Do windows stuff
+		if err := syscall.Mlock(b.Bytes); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (b *OnionBuffer) Munlock() error {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		if err := unix.Munlock(b.Bytes); err != nil { // Unlock memory allotted to chunk to be used for SWAP
 			return err
 		}
@@ -164,7 +168,9 @@ func (b *OnionBuffer) Munlock() error {
 		//	return err
 		//}
 	} else {
-		// Do windows stuff
+		if err := syscall.Munlock(b.Bytes); err != nil {
+			return err
+		}
 	}
 	return nil
 }
