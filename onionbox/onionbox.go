@@ -142,7 +142,9 @@ func createCSRF() (string, error) {
 // Logf is a helper function which will utilize the Logger from ob
 // to print formatted logs.
 func (ob *Onionbox) Logf(format string, args ...interface{}) {
-	ob.Logger.Printf(format, args...)
+	if ob.Debug {
+		ob.Logger.Printf(format, args...)
+	}
 }
 
 // Quit will Quit all stored buffers and exit onionbox.
