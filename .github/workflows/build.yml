@@ -55,8 +55,8 @@ jobs:
         run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-darwin-386 .
 
       - name: Build Darwin Arm64 
-        id: build-darwin-386
-        run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-darwin-386 .
+        id: build-darwin-arm64
+        run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-darwin-arm64 .
 
       - name: Build FreeBSD Amd64
         id: build-freebsd-amd64
