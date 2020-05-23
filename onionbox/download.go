@@ -63,6 +63,7 @@ func (ob *Onionbox) downloadGet(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		if oBuffer.DownloadLimit != 0 {
+			// If buffer's download limit has been reached
 			if oBuffer.Downloads >= oBuffer.DownloadLimit {
 				ob.Logf("Download limit reached for %s", oBuffer.Name)
 				if err := ob.Store.Destroy(oBuffer); err != nil {
@@ -70,10 +71,9 @@ func (ob *Onionbox) downloadGet(w http.ResponseWriter, r *http.Request) {
 				}
 				http.Error(w, "Download limit reached.", http.StatusUnauthorized)
 				return
-			} else {
-				// Increment files download count
-				oBuffer.Downloads++
 			}
+			// Increment files download count
+			oBuffer.Downloads++
 		}
 		chksmValid, err := oBuffer.ValidateChecksum() // Validate checksum
 		if err != nil {
@@ -128,6 +128,7 @@ func (ob *Onionbox) downloadPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if oBuffer.DownloadLimit != 0 {
+		// If buffer's download limit has been reached
 		if oBuffer.Downloads >= oBuffer.DownloadLimit {
 			if err := ob.Store.Destroy(oBuffer); err != nil {
 				ob.Logf("Error destroying onionbuffer from store: %v", err)
@@ -135,10 +136,9 @@ func (ob *Onionbox) downloadPost(w http.ResponseWriter, r *http.Request) {
 			ob.Logf("Download limit reached for %s", oBuffer.Name)
 			http.Error(w, "Download limit reached.", http.StatusUnauthorized)
 			return
-		} else {
-			// Increment files download count
-			oBuffer.Downloads++
 		}
+		// Increment files download count
+		oBuffer.Downloads++
 	}
 	// Validate checksum
 	chksmValid, err := oBuffer.ValidateChecksum()
