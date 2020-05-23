@@ -101,13 +101,16 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 	// }
 	// zBuffer := bytes.NewBuffer(mmapBytes) // Create buffer for session's in-memory zip file
 	zBuffer := new(bytes.Buffer)
+	if err := syscall.Mlock(zBuffer.Bytes()); err != nil { // Lock memory allotted to zBuffer from being used in SWAP
+		ob.Logf("Error mlocking allotted memory for zBuffer: %v", err)
+	}
 	zWriter := zip.NewWriter(zBuffer) // Create new zip file
 
 	wg := new(sync.WaitGroup) // Wait group for sync
 	wg.Add(len(files))
 
-	go func() { // Write all files in queue to memory
-		if err := onionbuffer.WriteFilesToBuffer(zWriter, uploadQueue, wg); err != nil {
+	go func() { // Write all files in queue to new zip file
+		if err := onionbuffer.WriteFilesToZip(zWriter, uploadQueue, wg); err != nil {
 			ob.Logf("Error writing files in queue to memory: %v", err)
 			http.Error(w, "Error writing your files to memory.", http.StatusInternalServerError)
 			return
@@ -118,10 +121,6 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 
 	if err := zWriter.Close(); err != nil { // Close zipwriter
 		ob.Logf("Error closing zip writer: %v", err)
-	}
-
-	if err := syscall.Mlock(zBuffer.Bytes()); err != nil { // Lock memory allotted to zBuffer from being used in SWAP
-		ob.Logf("Error mlocking allotted memory for zBuffer: %v", err)
 	}
 
 	// Create OnionBuffer object
@@ -140,9 +139,13 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		zBuffer.Reset() // Empty temporary zip buffer
+		// Empty zBuffer after copied to onionbuffer
+		if err := syscall.Munlock(zBuffer.Bytes()); err != nil {
+			ob.Logf("Error munlocking allotted memory for zBuffer: %v", err)
+		}
+		zBuffer.Reset()
 
-		if err := syscall.Mlock(oBuffer.Bytes); err != nil { // Lock memory allotted to oBuffer from being used in SWAP
+		if err := oBuffer.Mlock(); err != nil {
 			ob.Logf("Error mlocking allotted memory for oBuffer: %v", err)
 		}
 
@@ -157,9 +160,13 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 	} else { // If password option was NOT enabled
 		oBuffer.Bytes = zBuffer.Bytes()
 
-		zBuffer.Reset() // Empty temporary zip buffer
+		// Empty zBuffer after copied to onionbuffer
+		if err := syscall.Munlock(zBuffer.Bytes()); err != nil {
+			ob.Logf("Error munlocking allotted memory for zBuffer: %v", err)
+		}
+		zBuffer.Reset()
 
-		if err := syscall.Mlock(oBuffer.Bytes); err != nil { // Lock memory allotted to oBuffer from being used in SWAP
+		if err := oBuffer.Mlock(); err != nil {
 			ob.Logf("Error mlocking allotted memory for oBuffer: %v", err)
 		}
 
@@ -205,13 +212,4 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error writing to client.", http.StatusInternalServerError)
 		return
 	}
-
-	// Destroy temp OnionBuffer
-	// oBuffer.Lock()
-	// defer oBuffer.Unlock()
-	// if err := oBuffer.Destroy(); err != nil {
-	// 	if err.Error() != "invalid argument" {
-	// 		ob.Logf("Error destroying temporary onionbuffer: %v", err)
-	// 	}
-	// }
 }

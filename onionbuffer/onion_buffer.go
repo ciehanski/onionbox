@@ -78,7 +78,7 @@ func (b *OnionBuffer) SetExpiration(expiration string) error {
 	return nil
 }
 
-func WriteFilesToBuffer(w *zip.Writer, files chan *multipart.FileHeader, wg *sync.WaitGroup) error {
+func WriteFilesToZip(w *zip.Writer, files chan *multipart.FileHeader, wg *sync.WaitGroup) error {
 	for {
 		select {
 		case fileHeader := <-files:
