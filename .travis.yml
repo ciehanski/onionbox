@@ -2,9 +2,8 @@ language: go
 go: 1.14.x
 os: linux
 dist: xenial
-sudo: false
 install: true
-matrix:
+jobs:
   include:
   - name: linux-amd64
     env: GOOS=linux GOARCH=amd64 BINARY=linux-amd64
@@ -30,8 +29,6 @@ matrix:
     env: GOOS=windows GOARCH=amd64 BINARY=windows-amd64.exe
   - name: windows-386
     env: GOOS=windows GOARCH=386 BINARY=windows-386.exe
-  - name: linux-386
-    env: GOOS=linux GOARCH=386 BINARY=linux-386
   - name: android
     env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
     before_script:
@@ -60,13 +57,13 @@ after_script:
 - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
 deploy:
   provider: releases
-  api_key:
+  token:
     secure: RZqAfnnzpFkBOpS1fBQrfNL1MrHrIJzaKGzngPNhicwVjGPDP5LRbMF7CFRjXDqJFeOCT0G21wOL+NAEV+Vgwt1XyjEqxFPSbl9lMJnhEnojQQakKK8yQDb6nnnSjfsPijfpAjIaSKp1HMtcbvOnL9BhOtA4EJqgzkwLvzC84BbcRrjt2y8AmRsJYRgPNa/jKnz9CIxew93QTcR1Otyo/v0MRmml6Qoh5ugRSQyEHBZoR+3OzE2KwYciEGHRTDU76qT7FGtGiLEcN2BnDgCguLQ0KGQabTTz/HRUIpKMiI+he35+f3JwlhXpmOYnh2dWri77OnzdJyAILxAjfLYtSxG/BEzcnQyznApER63d47A1XEZToUhd/jQWdgHjpf6LAfzScw/OiQGCAerlAec5yzExxQToQND6idEtYgF54KgMZ+PPVsKvP+hfmZ2UW2FakJyuoi9jI8sAL+qMxi3Ewkl6zoxHyz5gRxx10UHscVjf3/xnQppaj9k6zYifa0CIfqHhE3aJyg/YMli8Gm8GZcTx3AtX72J5FfCT/zicA3ofibh3N1bxFJ2dfHprJYTRvolfgYkRuaQvgqh9rMHEyv9ckuHPRdGVnfM0ezojo+6jXF922oOvdv9VpGQFmif9GD4N7wZyR/R+N8yp8qFiClUYwS4amklveAojawK/THY=
   file_glob: true
   file: cmd/onionbox/bin/*
   name: ${TRAVIS_TAG}
   tag_name: ${TRAVIS_TAG}
+  draft: true
   on:
     repo: ciehanski/onionbox
     tags: true
-  skip_cleanup: 'true'
