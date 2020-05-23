@@ -31,39 +31,42 @@ jobs:
     env: GOOS=windows GOARCH=386 BINARY=windows-386.exe
   - name: android
     env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
-    before_script:
-    - sudo apt update && sudo apt-get install default-jdk android-sdk
-      # - mkdir ndk && wget -q -c https://dl.google.com/android/repository/android-ndk-r19-linux-x86_64.zip
-      # - unzip -qq -d ndk android-ndk-r19-linux-x86_64.zip
-      # - cd ndk && ./sdkmanager "ndk-bundle"
-      # - go get -u -a -v -x github.com/ipsn/go-libtor
-      # - go get golang.org/x/mobile/cmd/gomobile
+    before_script: 
+      - sudo apt update && sudo apt-get install default-jdk android-sdk 
+      # - mkdir ndk && wget -q -c https://dl.google.com/android/repository/android-ndk-r19-linux-x86_64.zip 
+      # - unzip -qq -d ndk android-ndk-r19-linux-x86_64.zip 
+      # - cd ndk && ./sdkmanager "ndk-bundle" 
+      - go get -u -a -v -x github.com/ipsn/go-libtor
+      - go get golang.org/x/mobile/cmd/gomobile
       # - gomobile init -ndk ndk
     script:
-    - go test -v -race -bench -cpu=1,2,4 ./...
-    - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
+      - go test -v -race -bench -cpu=1,2,4 ./...
+      - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
   fast_finish: true
   allow_failures:
-  - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+    - env: CGO_ENABLED=1 GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+
 before_script:
-- go get -u -a -v -x github.com/ipsn/go-libtor
+  - mkdir cmd/onionbox/bin
+  - go get -u -a -v -x github.com/ipsn/go-libtor
+
 script:
-- mkdir cmd/onionbox/bin
-- cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags
-  '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
+  - cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
+
 after_script:
-- go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
-- go get -u github.com/mattn/goveralls
-- "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
+  - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
+  - go get -u github.com/mattn/goveralls
+  - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
+
 deploy:
   provider: releases
-  token:
-    secure: RZqAfnnzpFkBOpS1fBQrfNL1MrHrIJzaKGzngPNhicwVjGPDP5LRbMF7CFRjXDqJFeOCT0G21wOL+NAEV+Vgwt1XyjEqxFPSbl9lMJnhEnojQQakKK8yQDb6nnnSjfsPijfpAjIaSKp1HMtcbvOnL9BhOtA4EJqgzkwLvzC84BbcRrjt2y8AmRsJYRgPNa/jKnz9CIxew93QTcR1Otyo/v0MRmml6Qoh5ugRSQyEHBZoR+3OzE2KwYciEGHRTDU76qT7FGtGiLEcN2BnDgCguLQ0KGQabTTz/HRUIpKMiI+he35+f3JwlhXpmOYnh2dWri77OnzdJyAILxAjfLYtSxG/BEzcnQyznApER63d47A1XEZToUhd/jQWdgHjpf6LAfzScw/OiQGCAerlAec5yzExxQToQND6idEtYgF54KgMZ+PPVsKvP+hfmZ2UW2FakJyuoi9jI8sAL+qMxi3Ewkl6zoxHyz5gRxx10UHscVjf3/xnQppaj9k6zYifa0CIfqHhE3aJyg/YMli8Gm8GZcTx3AtX72J5FfCT/zicA3ofibh3N1bxFJ2dfHprJYTRvolfgYkRuaQvgqh9rMHEyv9ckuHPRdGVnfM0ezojo+6jXF922oOvdv9VpGQFmif9GD4N7wZyR/R+N8yp8qFiClUYwS4amklveAojawK/THY=
-  file_glob: true
-  file: cmd/onionbox/bin/*
-  name: ${TRAVIS_TAG}
-  tag_name: ${TRAVIS_TAG}
-  draft: true
-  on:
+  token: 
+    secure: oTjvpBaz+f8md2uXFakAf9QUmk1oS5DZPZyUtifPt+mNJDOHNVB/RK/svVvRFbLcG1QbFSGOou55MOZpXJrgtqivu08+qXgOCw1VZDoclw0hFZk5KlA2teZovXxm/2+LDbT36kVwq/StcoYbpH/1o093t0mZiDiuF/Te6/R/SNTaW5R/8T27hyBmIf+PsexmbjdFextwimYYEkbXrlu5IbiVc6wkzoAucVpkF8/F667MtzlJ1asovxYib/FGnSMO03sJ5Y8YPmR9ghxXqCkNHPmCuZdbv/Bihb6zYAgUwEqGZEoEqqMGxPaIKnP8E3fzfDDGD0/nKIit6sUJcJbSnBjZDI3OcC+KcEMmgRjkzxoJkRHCkMcQ08XFmLpAtH3NnZWWyHfXQ2f2Mr8vOew4JCMKoyryNOtR0Kf2/caC0yQQTa48xBx8x9IUXFFSS9v7k+VclHFffphzleu+mzN2iT7c7Zb4fuVg4zWBZXZacbTXUzjzeEjBOiIG2ZBsHAKykWi0BV/UkPGhZ7ptLoeW9lW+7uhU4liZIq/8ScEQ/Fpy5LebvWm0WtAK1EhMXBw6k3aFD9gnysdheEI6jPjhF4TpGogh1wH0n8I43CP2iMbQjOjAieiOneaajnz+MnUyt92cHJevSgoeF66gurycrQkwqn6F9OcCsW2qnonj1pk=
+  file_glob: true 
+  file: cmd/onionbox/bin/* 
+  name: ${TRAVIS_TAG} 
+  tag_name: ${TRAVIS_TAG} 
+  draft: true 
+  on: 
     repo: ciehanski/onionbox
     tags: true
