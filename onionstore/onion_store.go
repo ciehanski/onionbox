@@ -90,7 +90,7 @@ func (s *OnionStore) DestroyAll() error {
 func (s *OnionStore) DestroyExpiredBuffers() error {
 	for {
 		select {
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * 15):
 			if s != nil {
 				for _, f := range s.BufferFiles {
 					if f.Expire {
