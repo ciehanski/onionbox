@@ -5,10 +5,6 @@ dist: xenial
 sudo: false
 install: true
 
-stages:
-  - name: deploy
-    if: branch = master
-
 matrix:
   include:
     - name: linux-amd64
