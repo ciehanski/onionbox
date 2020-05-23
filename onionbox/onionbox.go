@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/cretz/bine/tor"
@@ -36,6 +37,8 @@ type Onionbox struct {
 }
 
 func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, error) {
+	// Disable core dumping
+	ob.disableCoreDumps()
 	// If debug is NOT enabled, write all logs to disk (instead of stdout)
 	// and rotate them when necessary.
 	var torLogger io.Writer
@@ -155,11 +158,15 @@ func (ob *Onionbox) Quit() {
 	os.Exit(0)
 }
 
-// DisableCoreDumps disables core dumps on Unix systems.
+// disableCoreDumps disables core dumps on Unix systems.
 // ref: https://github.com/awnumar/memguard/blob/master/memcall/memcall_unix.go
-func (ob *Onionbox) DisableCoreDumps() {
-	if runtime.GOOS != "windows" {
+func (ob *Onionbox) disableCoreDumps() {
+	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		if err := unix.Setrlimit(unix.RLIMIT_CORE, &unix.Rlimit{Cur: 0, Max: 0}); err != nil {
+			ob.Logf("Error disabling core dumps: %v", err)
+		}
+	} else {
+		if err := syscall.Setrlimit(syscall.RLIMIT_CORE, &syscall.Rlimit{Cur: 0, Max: 0}); err != nil {
 			ob.Logf("Error disabling core dumps: %v", err)
 		}
 	}
