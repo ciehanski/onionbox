@@ -14,16 +14,16 @@ import (
 func (ob *Onionbox) download(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		ob.get(w, r)
+		ob.downloadGet(w, r)
 	case http.MethodPost: // If buffer was password protected
-		ob.post(w, r)
+		ob.downloadPost(w, r)
 	default:
 		http.Error(w, "Invalid HTTP Method.", http.StatusMethodNotAllowed)
 		return
 	}
 }
 
-func (ob *Onionbox) get(w http.ResponseWriter, r *http.Request) {
+func (ob *Onionbox) downloadGet(w http.ResponseWriter, r *http.Request) {
 	oBuffer := ob.Store.Get(r.URL.Path[1:])
 	if oBuffer == nil {
 		ob.Logf("File %s not found in store", oBuffer.Name)
@@ -99,7 +99,7 @@ func (ob *Onionbox) get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (ob *Onionbox) post(w http.ResponseWriter, r *http.Request) {
+func (ob *Onionbox) downloadPost(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		ob.Logf("Error parsing upload form: %v", err)
 		http.Error(w, "Error parsing password form.", http.StatusInternalServerError)
