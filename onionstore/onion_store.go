@@ -70,14 +70,15 @@ func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (s *OnionStore) DestroyAll() error {
 	if s.BufferFiles != nil {
 		for _, b := range s.BufferFiles {
-			s.Destroy(b)
+			if err := s.Destroy(b); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
