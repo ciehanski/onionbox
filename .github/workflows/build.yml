@@ -33,18 +33,18 @@ jobs:
       - name: Build
         id: build
         run: |
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-linux-amd64 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-linux-arm64 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm go build -a -installsuffix cgo -ldflags '-s' -o pigeon-linux-arm .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=368 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-linux-386 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-darwin-amd64 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-darwin-386 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-freebsd-amd64 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-freebsd-386 .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=arm go build -a -installsuffix cgo -ldflags '-s' -o pigeon-freebsd-arm .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-windows-amd64.exe .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-windows-386.exe .
-          cd cmd/pigeon && CGO_ENABLED=1 GO111MODULE=on GOOS=android GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o pigeon-android-arm64.aar .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-linux-amd64 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-linux-arm64 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=arm go build -a -installsuffix cgo -ldflags '-s' -o onionbox-linux-arm .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=linux GOARCH=368 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-linux-386 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-darwin-amd64 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=darwin GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-darwin-386 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-freebsd-amd64 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-freebsd-386 .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=freebsd GOARCH=arm go build -a -installsuffix cgo -ldflags '-s' -o onionbox-freebsd-arm .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-windows-amd64.exe .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=windows GOARCH=386 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-windows-386.exe .
+          cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on GOOS=android GOARCH=arm64 go build -a -installsuffix cgo -ldflags '-s' -o onionbox-android-arm64.aar .
 
       - name: Test
         id: test
