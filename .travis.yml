@@ -94,4 +94,4 @@ deploy:
   bucket: $ARTIFACTS_BUCKET
   skip_cleanup: true
   region: us-east-2
-  local_dir: cmd/onionbox/bin 
+  local_dir: $HOME/ciehanski/onionbox/cmd/onionbox/bin
