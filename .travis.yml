@@ -25,6 +25,18 @@ jobs:
     env: GOOS=freebsd GOARCH=386 BINARY=freebsd-386
   - name: freebsd-arm
     env: GOOS=freebsd GOARCH=arm BINARY=freebsd-arm
+  - name: openbsd-amd64
+    env: GOOS=openbsd GOARCH=amd64 BINARY=openbsd-amd64
+  - name: openbsd-386
+    env: GOOS=openbsd GOARCH=386 BINARY=openbsd-386
+  - name: openbsd-arm
+    env: GOOS=openbsd GOARCH=arm BINARY=openbsd-arm
+  - name: netbsd-amd64
+    env: GOOS=netbsd GOARCH=amd64 BINARY=netbsd-amd64
+  - name: netbsd-386
+    env: GOOS=netbsd GOARCH=386 BINARY=netbsd-386
+  - name: netbsd-arm
+    env: GOOS=netbsd GOARCH=arm BINARY=netbsd-arm
   - name: windows-amd64
     env: GOOS=windows GOARCH=amd64 BINARY=windows-amd64.exe
   - name: windows-386
@@ -33,50 +45,50 @@ jobs:
     name: android
     env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
     jdk:
-      - oraclejdk9
+    - oraclejdk8
     android:
       components:
-        - tools
-        - build-tools-26.0.2
-        - android-26
+      - tools
+      - platform-tools
+      - tools
+      - build-tools-26.0.2
+      - android-26
     install:
-      - echo y | sdkmanager 'ndk-bundle'
-      - echo y | sdkmanager 'cmake;3.6.4111459'
-      - echo y | sdkmanager 'lldb;3.0'
-    before_script: 
-      - mkdir cmd/onionbox/bin
-      - go get -u -a -v -x github.com/ipsn/go-libtor
-      - go mod download
-      - go get golang.org/x/mobile/cmd/gomobile
+    - echo y | sdkmanager 'ndk-bundle'
+    - echo y | sdkmanager "cmake;3.6.4111459"
+    - echo y | sdkmanager "lldb;3.1"
+    before_script:
+    - mkdir cmd/onionbox/bin
+    - go get -u -a -v -x github.com/ipsn/go-libtor
+    - go mod download
+    - go get golang.org/x/mobile/cmd/gomobile
     script:
-      - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
+    - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
   fast_finish: true
   allow_failures:
-    - env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+  - env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
 
-# Prepare before build, run tests, upload coverage profile to coveralls.io
 before_script:
-  - mkdir cmd/onionbox/bin
-  - go get -u -a -v -x github.com/ipsn/go-libtor
-  - go mod download
-  - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
-  - go get -u github.com/mattn/goveralls
-  - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
+- mkdir cmd/onionbox/bin
+- go get -u -a -v -x github.com/ipsn/go-libtor
+- go mod download
+- go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
+- go get -u github.com/mattn/goveralls
+- "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
 
-# Run build script
 script:
-  - cd cmd/onionbox && CGO_ENABLED=1 GOOS=${GOOS} GOARCH=${GOARCH} go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
+- cd cmd/onionbox && CGO_ENABLED=1 GOOS=${GOOS} GOARCH=${GOARCH} go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
 
-# Deploy to GitHub repo
 deploy:
   provider: releases
-  token: 
-    secure: oTjvpBaz+f8md2uXFakAf9QUmk1oS5DZPZyUtifPt+mNJDOHNVB/RK/svVvRFbLcG1QbFSGOou55MOZpXJrgtqivu08+qXgOCw1VZDoclw0hFZk5KlA2teZovXxm/2+LDbT36kVwq/StcoYbpH/1o093t0mZiDiuF/Te6/R/SNTaW5R/8T27hyBmIf+PsexmbjdFextwimYYEkbXrlu5IbiVc6wkzoAucVpkF8/F667MtzlJ1asovxYib/FGnSMO03sJ5Y8YPmR9ghxXqCkNHPmCuZdbv/Bihb6zYAgUwEqGZEoEqqMGxPaIKnP8E3fzfDDGD0/nKIit6sUJcJbSnBjZDI3OcC+KcEMmgRjkzxoJkRHCkMcQ08XFmLpAtH3NnZWWyHfXQ2f2Mr8vOew4JCMKoyryNOtR0Kf2/caC0yQQTa48xBx8x9IUXFFSS9v7k+VclHFffphzleu+mzN2iT7c7Zb4fuVg4zWBZXZacbTXUzjzeEjBOiIG2ZBsHAKykWi0BV/UkPGhZ7ptLoeW9lW+7uhU4liZIq/8ScEQ/Fpy5LebvWm0WtAK1EhMXBw6k3aFD9gnysdheEI6jPjhF4TpGogh1wH0n8I43CP2iMbQjOjAieiOneaajnz+MnUyt92cHJevSgoeF66gurycrQkwqn6F9OcCsW2qnonj1pk=
-  file_glob: true 
-  file: cmd/onionbox/bin/* 
-  name: ${TRAVIS_TAG} 
-  tag_name: ${TRAVIS_TAG} 
-  draft: true 
-  on: 
+  token:
+    secure: YD7lfggfw1//HGmBC0bMRtbCZ8CaTSOttojXrlJJcibv5E+aeNrCELjqeAc5Tq/LDV4kP1LVVMaIxaBShAVi3B5SvXsuzh8qjsrut/OqmI9e5lpaAmODZbszzjIUUbXa1pMJXTCHU40P+6JEbrNnzoFLrVqlFKqJDJoyCB8KXM1V0ldV0txsnyQMs2dd8GXMdh5hHeijnOIG5VzdIakbY5qtC5dn/zFhFNy7JixXNCfNLzoLt7WLXXb6i0FZskKV8+XTUQHOPRKm8RVQn1TPj5s8k5EJhIA0JSL53E8TpLhYAEXNzmXCO4cf8Klyt+Y/lhnSzUWQl6kTsaetW5dkpNibYX9nfPAiLse81kTfMOeLcUI4YQLX0hB7JAVNhwrJkgF0EsoRILl3pB9s6KWmvAx8ZUAsRFbBP2HKxscC0FzMi84Krz8bZJ23g0elkiZTN1iS9CTX2Nyj5kQ8BLJ4/G1eLxKsuFvncLkQaO/ahmZg4lBnPUZpcbAn3aQwygTLOhl5a1Bbavo6jnpBt0zdCTDZnxgFumK9tTzfDdjH/UBEHtWfjBShQouwU32Onu/sF2pno3hLJp6DQEjYhoHi/2dspsHGzZ1eVqQ3xUXg0ZHo30h/uZ1Gmpq0hnr+OzXvv5EVRab4E2bjFrPRsxux0UIb+evckCcfchLvul7CnT8=
+  file_glob: true
+  file: cmd/onionbox/bin/*
+  name: "${TRAVIS_TAG}"
+  tag_name: "${TRAVIS_TAG}"
+  draft: true
+  on:
     repo: ciehanski/onionbox
+    branch: master
     tags: true
