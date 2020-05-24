@@ -37,8 +37,8 @@ from the [releases](https://github.com/ciehanski/onionbox/releases) section. You
 installed and if you are running a flavor of Linux. This will not work with Windows or macOS. This will take a long time, roughly ~10 minutes. You can build from source with the `Makefile`:
 
 ```bash
-git clone https://github.com/ciehanski/onionbox .
-cd onionbox && make build
+$ git clone https://github.com/ciehanski/onionbox .
+$ cd onionbox && make build
 ```
 
 ## Usage
@@ -47,9 +47,9 @@ Once you have the `onionbox` binary simply make it executable and run it with th
 provided:
 
 ```bash
-chmod +x onionbox
-./onionbox -port 8080 -debug
-    
+$ chmod +x onionbox
+$ ./onionbox -port 8080 -debug
+
     -port <int> : tell onionbox with port to make your onion service remotely
     availble on.
 
