@@ -87,16 +87,9 @@ before_script:
 script:
 - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
-deploy:
-  provider: releases
-  token:
-    secure: YD7lfggfw1//HGmBC0bMRtbCZ8CaTSOttojXrlJJcibv5E+aeNrCELjqeAc5Tq/LDV4kP1LVVMaIxaBShAVi3B5SvXsuzh8qjsrut/OqmI9e5lpaAmODZbszzjIUUbXa1pMJXTCHU40P+6JEbrNnzoFLrVqlFKqJDJoyCB8KXM1V0ldV0txsnyQMs2dd8GXMdh5hHeijnOIG5VzdIakbY5qtC5dn/zFhFNy7JixXNCfNLzoLt7WLXXb6i0FZskKV8+XTUQHOPRKm8RVQn1TPj5s8k5EJhIA0JSL53E8TpLhYAEXNzmXCO4cf8Klyt+Y/lhnSzUWQl6kTsaetW5dkpNibYX9nfPAiLse81kTfMOeLcUI4YQLX0hB7JAVNhwrJkgF0EsoRILl3pB9s6KWmvAx8ZUAsRFbBP2HKxscC0FzMi84Krz8bZJ23g0elkiZTN1iS9CTX2Nyj5kQ8BLJ4/G1eLxKsuFvncLkQaO/ahmZg4lBnPUZpcbAn3aQwygTLOhl5a1Bbavo6jnpBt0zdCTDZnxgFumK9tTzfDdjH/UBEHtWfjBShQouwU32Onu/sF2pno3hLJp6DQEjYhoHi/2dspsHGzZ1eVqQ3xUXg0ZHo30h/uZ1Gmpq0hnr+OzXvv5EVRab4E2bjFrPRsxux0UIb+evckCcfchLvul7CnT8=
-  file_glob: true
-  file: cmd/onionbox/bin/*
-  name: $TRAVIS_TAG
-  tag_name: $TRAVIS_TAG
-  draft: true
-  on:
-    repo: ciehanski/onionbox
-    branch: master
-    tags: true
+addons:
+  artifacts:
+    s3_region: "us-east-2"
+  paths:
+  - $(git ls-files -o | tr "\n" ":")
+  working_dir: cmd/onionbox/bin
