@@ -87,9 +87,11 @@ before_script:
 script:
 - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
-addons:
-  artifacts:
-    s3_region: "us-east-2"
-  paths:
-  - $(git ls-files -o | tr "\n" ":")
-  working_dir: cmd/onionbox/bin
+deploy:
+  provider: s3
+  access_key_id: $ARTIFACTS_KEY
+  secret_access_key: $ARTIFACTS_SECRET
+  bucket: $ARTIFACTS_BUCKET
+  skip_cleanup: true
+  region: us-east-2
+  local_dir: cmd/onionbox/bin 
