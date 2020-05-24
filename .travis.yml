@@ -3,6 +3,10 @@ go: 1.14.x
 os: linux
 dist: xenial
 install: true
+cache:
+  directories:
+  - $HOME/Library/Caches/go-build
+  - $GOPATH/pkg/mod
 jobs:
   include:
   - name: linux-amd64
