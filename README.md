@@ -23,11 +23,40 @@ of course deploy onionbox to any cloud provider of your choosing.
 - Static binary! Woo!
 
 ## TODO:
-- [x] Implement more tests
-- [ ] Implement usage of *multipart.Reader
+- [ ] Implement more tests
 - [ ] Android support (build almost working)
-- [ ] Windows support (needs testing)
+- [x] Windows support (needs testing)
 - [x] ARM support
+- [ ] QR Code Generation
+- [ ] Add another mode supporting cli-only upload from disk
+
+## Build/Install
+
+The easiest way to install `onionbox` will be to download the applicable binary
+from the [releases](https://github.com/ciehanski/onionbox/releases) section. You can also install if you have the [Go toolchain](https://golang.org/dl/)
+installed and if you are running a flavor of Linux. This will not work with Windows or macOS. This will take a long time, roughly ~10 minutes. You can build from source with the `Makefile`:
+
+```bash
+git clone https://github.com/ciehanski/onionbox .
+cd onionbox && make build
+```
+
+## Usage
+
+Once you have the `onionbox` binary simply make it executable and run it with the various flags
+provided:
+
+```bash
+chmod +x onionbox
+./onionbox -port 8080 -debug
+    
+    -port <int> : tell onionbox with port to make your onion service remotely
+    availble on.
+
+    -torv3 <bool> : tell onionbox to run on torv3 or torv2.
+
+    -debug <bool> : tell onionbox to print debug logs or silence logs.
+```
 
 ## Contributing:
 
@@ -79,8 +108,10 @@ make lint
 
 ## Shoutouts:
 Huge shoutout to [@karalabe](https://github.com/karalabe), the creator of [go-libtor](https://github.com/ipsn/go-libtor) which enables the 
-creation of a Go-friendly static Tor lib which utilizes [bine](https://github.com/cretz/bine) (created by [@cretz](https://github.com/cretz))
+creation of a Go-friendly static Tor binary which utilizes [bine](https://github.com/cretz/bine) (created by [@cretz](https://github.com/cretz))
 to interface with the Tor API. Big thanks to these guys or this project would not be possible.
 
 ## License:
 - AGPLv3
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox?ref=badge_large)
