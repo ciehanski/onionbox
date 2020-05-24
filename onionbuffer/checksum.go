@@ -31,8 +31,6 @@ func (b *OnionBuffer) GetChecksum() (string, error) {
 	}
 	if err != io.EOF {
 		return "", err
-	} else {
-		err = nil
 	}
 	b.Unlock()
 	hashInBytes := hash.Sum(nil)[:16]

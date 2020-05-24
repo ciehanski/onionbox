@@ -60,19 +60,25 @@ func (s *OnionStore) Exists(bufName string) bool {
 	return exists
 }
 
-func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) {
+func (s *OnionStore) Destroy(b *onionbuffer.OnionBuffer) error {
 	s.Lock()
 	defer s.Unlock()
 	// Remove from store
 	if _, ok := s.BufferFiles[b.Name]; ok {
 		delete(s.BufferFiles, b.Name)
+		if err := b.Destroy(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (s *OnionStore) DestroyAll() error {
 	if s.BufferFiles != nil {
 		for _, b := range s.BufferFiles {
-			s.Destroy(b)
+			if err := s.Destroy(b); err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -84,7 +90,7 @@ func (s *OnionStore) DestroyAll() error {
 func (s *OnionStore) DestroyExpiredBuffers() error {
 	for {
 		select {
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * 15):
 			if s != nil {
 				for _, f := range s.BufferFiles {
 					if f.Expire {

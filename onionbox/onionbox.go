@@ -10,12 +10,13 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/cretz/bine/tor"
 	"github.com/ipsn/go-libtor"
-	"github.com/natefinch/lumberjack"
 	"golang.org/x/sys/unix"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/ciehanski/onionbox/onionstore"
 )
@@ -36,6 +37,8 @@ type Onionbox struct {
 }
 
 func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, error) {
+	// Disable core dumping
+	ob.disableCoreDumps()
 	// If debug is NOT enabled, write all logs to disk (instead of stdout)
 	// and rotate them when necessary.
 	var torLogger io.Writer
@@ -142,7 +145,9 @@ func createCSRF() (string, error) {
 // Logf is a helper function which will utilize the Logger from ob
 // to print formatted logs.
 func (ob *Onionbox) Logf(format string, args ...interface{}) {
-	ob.Logger.Printf(format, args...)
+	if ob.Debug {
+		ob.Logger.Printf(format, args...)
+	}
 }
 
 // Quit will Quit all stored buffers and exit onionbox.
@@ -153,11 +158,15 @@ func (ob *Onionbox) Quit() {
 	os.Exit(0)
 }
 
-// DisableCoreDumps disables core dumps on Unix systems.
+// disableCoreDumps disables core dumps on Unix systems.
 // ref: https://github.com/awnumar/memguard/blob/master/memcall/memcall_unix.go
-func (ob *Onionbox) DisableCoreDumps() {
-	if runtime.GOOS != "windows" {
+func (ob *Onionbox) disableCoreDumps() {
+	if runtime.GOOS != "windows" && runtime.GOOS != "darwin" {
 		if err := unix.Setrlimit(unix.RLIMIT_CORE, &unix.Rlimit{Cur: 0, Max: 0}); err != nil {
+			ob.Logf("Error disabling core dumps: %v", err)
+		}
+	} else {
+		if err := syscall.Setrlimit(syscall.RLIMIT_CORE, &syscall.Rlimit{Cur: 0, Max: 0}); err != nil {
 			ob.Logf("Error disabling core dumps: %v", err)
 		}
 	}
