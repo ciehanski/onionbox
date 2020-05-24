@@ -7,6 +7,7 @@ cache:
   directories:
   - $HOME/.cache/go-build
   - $GOPATH/pkg/mod
+  - $GOPATH/pkg/src
 jobs:
   include:
   - name: linux-amd64
@@ -54,20 +55,23 @@ jobs:
       components:
       - tools
       - platform-tools
-      - tools
       - build-tools-26.0.2
       - android-26
     install:
     - echo y | sdkmanager 'ndk-bundle'
-    - echo y | sdkmanager "cmake;3.6.4111459"
-    # - echo y | sdkmanager "lldb;3.1"
     before_script:
+    - wget https://dl.google.com/go/go1.14.3.linux-amd64.tar.gz
+    - sudo tar -xvf go1.14.3.linux-amd64.tar.gz
+    - sudo mv go /usr/local
+    - export GOROOT=/usr/local/go
+    - export GOPATH=$HOME/gopath
+    - export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
     - mkdir cmd/onionbox/bin
     - go get -u -a -v -x github.com/ipsn/go-libtor
     - go mod download
     - go get golang.org/x/mobile/cmd/gomobile
     script:
-    - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-${TRAVIS_TAG}-${BINARY} .
+    - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-$TRAVIS_TAG-$BINARY .
   fast_finish: true
   allow_failures:
   - env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
@@ -81,7 +85,7 @@ before_script:
 - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
 
 script:
-- cd cmd/onionbox && CGO_ENABLED=1 GOOS=${GOOS} GOARCH=${GOARCH} go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-${TRAVIS_TAG}-${BINARY} .
+- cd cmd/onionbox && CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 deploy:
   provider: releases
@@ -89,8 +93,8 @@ deploy:
     secure: YD7lfggfw1//HGmBC0bMRtbCZ8CaTSOttojXrlJJcibv5E+aeNrCELjqeAc5Tq/LDV4kP1LVVMaIxaBShAVi3B5SvXsuzh8qjsrut/OqmI9e5lpaAmODZbszzjIUUbXa1pMJXTCHU40P+6JEbrNnzoFLrVqlFKqJDJoyCB8KXM1V0ldV0txsnyQMs2dd8GXMdh5hHeijnOIG5VzdIakbY5qtC5dn/zFhFNy7JixXNCfNLzoLt7WLXXb6i0FZskKV8+XTUQHOPRKm8RVQn1TPj5s8k5EJhIA0JSL53E8TpLhYAEXNzmXCO4cf8Klyt+Y/lhnSzUWQl6kTsaetW5dkpNibYX9nfPAiLse81kTfMOeLcUI4YQLX0hB7JAVNhwrJkgF0EsoRILl3pB9s6KWmvAx8ZUAsRFbBP2HKxscC0FzMi84Krz8bZJ23g0elkiZTN1iS9CTX2Nyj5kQ8BLJ4/G1eLxKsuFvncLkQaO/ahmZg4lBnPUZpcbAn3aQwygTLOhl5a1Bbavo6jnpBt0zdCTDZnxgFumK9tTzfDdjH/UBEHtWfjBShQouwU32Onu/sF2pno3hLJp6DQEjYhoHi/2dspsHGzZ1eVqQ3xUXg0ZHo30h/uZ1Gmpq0hnr+OzXvv5EVRab4E2bjFrPRsxux0UIb+evckCcfchLvul7CnT8=
   file_glob: true
   file: cmd/onionbox/bin/*
-  name: "${TRAVIS_TAG}"
-  tag_name: "${TRAVIS_TAG}"
+  name: $TRAVIS_TAG
+  tag_name: $TRAVIS_TAG
   draft: true
   on:
     repo: ciehanski/onionbox
