@@ -5,7 +5,7 @@ dist: xenial
 install: true
 cache:
   directories:
-  - $HOME/Library/Caches/go-build
+  - $HOME/.cache/go-build
   - $GOPATH/pkg/mod
 jobs:
   include:
