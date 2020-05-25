@@ -11,44 +11,44 @@ cache:
 jobs:
   include:
   - name: linux-amd64
-    env: GOOS=linux GOARCH=amd64 BINARY=linux-amd64
+    env: BUILD_OS=linux BUILD_ARCH=amd64 BINARY=linux-amd64
   - name: linux-arm64
-    env: GOOS=linux GOARCH=arm64 BINARY=linux-arm64
+    env: BUILD_OS=linux BUILD_ARCH=arm64 BINARY=linux-arm64
   - name: linux-arm
-    env: GOOS=linux GOARCH=arm BINARY=linux-arm
+    env: BUILD_OS=linux BUILD_ARCH=arm ARM_VERSION=5 BINARY=linux-arm
   - name: linux-386
-    env: GOOS=linux GOARCH=386 BINARY=linux-386
+    env: BUILD_OS=linux BUILD_ARCH=386 BINARY=linux-386
   - name: darwin-amd64
-    env: GOOS=darwin GOARCH=amd64 BINARY=darwin-amd64
+    env: BUILD_OS=darwin BUILD_ARCH=amd64 BINARY=darwin-amd64
   - name: darwin-386
-    env: GOOS=darwin GOARCH=386 BINARY=darwin-386
+    env: BUILD_OS=darwin BUILD_ARCH=386 BINARY=darwin-386
   - name: darwin-arm64
-    env: GOOS=darwin GOARCH=arm64 BINARY=darwin-arm64
+    env: BUILD_OS=darwin BUILD_ARCH=arm64 BINARY=darwin-arm64
   - name: freebsd-amd64
-    env: GOOS=freebsd GOARCH=amd64 BINARY=freebsd-amd64
+    env: BUILD_OS=freebsd BUILD_ARCH=amd64 BINARY=freebsd-amd64
   - name: freebsd-386
-    env: GOOS=freebsd GOARCH=386 BINARY=freebsd-386
+    env: BUILD_OS=freebsd BUILD_ARCH=386 BINARY=freebsd-386
   - name: freebsd-arm
-    env: GOOS=freebsd GOARCH=arm BINARY=freebsd-arm
+    env: BUILD_OS=freebsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=freebsd-arm
   - name: openbsd-amd64
-    env: GOOS=openbsd GOARCH=amd64 BINARY=openbsd-amd64
+    env: BUILD_OS=openbsd BUILD_ARCH=amd64 BINARY=openbsd-amd64
   - name: openbsd-386
-    env: GOOS=openbsd GOARCH=386 BINARY=openbsd-386
+    env: BUILD_OS=openbsd BUILD_ARCH=386 BINARY=openbsd-386
   - name: openbsd-arm
-    env: GOOS=openbsd GOARCH=arm BINARY=openbsd-arm
+    env: BUILD_OS=openbsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=openbsd-arm
   - name: netbsd-amd64
-    env: GOOS=netbsd GOARCH=amd64 BINARY=netbsd-amd64
+    env: BUILD_OS=netbsd BUILD_ARCH=amd64 BINARY=netbsd-amd64
   - name: netbsd-386
-    env: GOOS=netbsd GOARCH=386 BINARY=netbsd-386
+    env: BUILD_OS=netbsd BUILD_ARCH=386 BINARY=netbsd-386
   - name: netbsd-arm
-    env: GOOS=netbsd GOARCH=arm BINARY=netbsd-arm
+    env: BUILD_OS=netbsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=netbsd-arm
   - name: windows-amd64
-    env: GOOS=windows GOARCH=amd64 BINARY=windows-amd64.exe
+    env: BUILD_OS=windows BUILD_ARCH=amd64 BINARY=windows-amd64.exe
   - name: windows-386
-    env: GOOS=windows GOARCH=386 BINARY=windows-386.exe
+    env: BUILD_OS=windows BUILD_ARCH=386 BINARY=windows-386.exe
   - language: android
     name: android
-    env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+    env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
     jdk:
     - oraclejdk8
     android:
@@ -74,7 +74,7 @@ jobs:
     - cd cmd/onionbox && gomobile bind -v -x -target=android -o onionbox-$TRAVIS_TAG-$BINARY .
   fast_finish: true
   allow_failures:
-  - env: GOOS=android GOARCH=arm64 BINARY=android-arm64.aar
+  - env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
 
 before_script:
 - mkdir cmd/onionbox/bin
@@ -85,7 +85,7 @@ before_script:
 - "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
 
 script:
-- cd cmd/onionbox && CGO_ENABLED=1 GOOS=$GOOS GOARCH=$GOARCH go build -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
+- cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH GOARM=$ARM_VERSION go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 deploy:
   provider: s3
