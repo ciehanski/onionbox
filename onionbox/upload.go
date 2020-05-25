@@ -4,8 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/subtle"
+	"encoding/base64"
 	"fmt"
 	"html/template"
+	"image"
+	"image/png"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -17,6 +20,7 @@ import (
 	"github.com/ciehanski/onionbox/templates"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/skip2/go-qrcode"
 )
 
 func (ob *Onionbox) upload(w http.ResponseWriter, r *http.Request) {
@@ -204,12 +208,42 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write the zip's URL to client for sharing
-	_, err = w.Write([]byte(fmt.Sprintf("Files uploaded. Please share this link with your recipients: http://%s.onion/%s",
-		ob.OnionURL, oBuffer.Name)))
-	if err != nil {
+	if err := writeUploadComplete(w, fmt.Sprintf("http://%s.onion/%s", ob.OnionURL, oBuffer.Name)); err != nil {
 		ob.Logf("Error writing to client: %v", err)
 		http.Error(w, "Error writing to client.", http.StatusInternalServerError)
 		return
 	}
+}
+
+// writeUploadComplete writes the UploadCompleteHTML contents to the browser
+// with the onionbuffer download link & generated QR code image.
+// ref: https://www.sanarias.com/blog/1214PlayingwithimagesinHTTPresponseingolang
+func writeUploadComplete(w http.ResponseWriter, onionAddr string) error {
+	// Generate QR code for download URL
+	qrCode, err := qrcode.Encode(onionAddr, qrcode.Medium, 256)
+	if err != nil {
+		return err
+	}
+	// convert []byte to image for saving to file
+	qrImg, _, err := image.Decode(bytes.NewReader(qrCode))
+	if err != nil {
+		return err
+	}
+	// Encode into PNG buffer
+	buffer := new(bytes.Buffer)
+	if err := png.Encode(buffer, qrImg); err != nil {
+		return err
+	}
+	// Convert PNG buffer to base64 string
+	str := base64.StdEncoding.EncodeToString(buffer.Bytes())
+	// Write HTML with onionAddr and QR code
+	if tmpl, err := template.New("upload_complete").Parse(templates.UploadCompleteHTML); err != nil {
+		return err
+	} else {
+		data := map[string]interface{}{"OnionAddr": onionAddr, "QR": str}
+		if err = tmpl.Execute(w, data); err != nil {
+			return err
+		}
+	}
+	return nil
 }

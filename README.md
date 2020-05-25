@@ -27,7 +27,7 @@ of course deploy onionbox to any cloud provider of your choosing.
 - [ ] Android support (build almost working)
 - [x] Windows support (needs testing)
 - [x] ARM support
-- [ ] QR Code Generation
+- [x] QR Code Generation
 - [ ] Add another mode supporting cli-only upload from disk
 
 ## Build/Install
