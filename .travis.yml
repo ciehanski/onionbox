@@ -26,17 +26,14 @@ jobs:
     script:
     - cd cmd/onionbox && $GOPATH/bin/xgo -v -x -out onionbox-$TRAVIS_TAG --targets=$BUILD_OS .
   # Darwin
-  - name: darwin
+  - name: darwin-amd64
     env: BUILD_OS=darwin
   # Windows
-  - name: windows
+  - name: windows-amd64
     env: BUILD_OS=windows
     script:
     - sudo apt-get install gcc-multilib gcc-mingw-w64
-    - cd cmd/onionbox && CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=$BUILD_OS GOARCH=amd64 go build -v -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
-  # FreeBSD
-  - name: freebsd
-    env: BUILD_OS=freebsd
+    - cd cmd/onionbox && CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=$BUILD_OS GOARCH=amd64 go build -a -v -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
   # Android
   - language: android
     name: android
@@ -67,7 +64,6 @@ jobs:
   fast_finish: true
   allow_failures:
   - env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
-  - env: BUILD_OS=windows
   - env: BUILD_OS=darwin
 
 # Get dependencies & run tests
