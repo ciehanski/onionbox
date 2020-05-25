@@ -11,23 +11,29 @@ cache:
 jobs:
   include:
   # Linux
-  - name: linux
-    env: BUILD_OS=linux/amd64,linux/arm,linux/arm64
+  - name: linux-amd64
+    env: BUILD_OS=linux/amd64
+  # Linux
+  - name: linux-arm
+    env: BUILD_OS=linux/arm
+  # Linux
+  - name: linux-arm64
+    env: BUILD_OS=linux/arm64
   # Darwin
   - name: darwin
     env: BUILD_OS=darwin/*
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-windows-am
   # Windows
   - name: windows
     env: BUILD_OS=windows/*
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-windows-amd64.exe .
   # FreeBSD
   - name: freebsd
     env: BUILD_OS=freebsd/*
-  # OpenBSD
-  - name: openbsd
-    env: BUILD_OS=openbsd/*
-  # NetBSD
-  - name: netbsd
-    env: BUILD_OS=netbsd/*
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=freebsd GOARCH=amd64 go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-windows-am
   # Android
   - language: android
     name: android
