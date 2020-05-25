@@ -22,7 +22,9 @@ func main() {
 	// Init flags
 	flag.BoolVar(&ob.Debug, "debug", false, "run in debug mode")
 	flag.BoolVar(&ob.TorVersion3, "torv3", true, "use version 3 of the Tor circuit (recommended)")
-	flag.IntVar(&ob.RemotePort, "port", 80, "remote port used to host the onion service")
+	flag.IntVar(&ob.RemotePort, "rport", 80, "remote port used to host the onion service")
+	flag.IntVar(&ob.LocalPort, "lport", 0, "local port used to host the onion service")
+	flag.StringVar(&ob.TorrcFile, "torrc", "", "provide a custom torrc file for the onion service")
 	flag.Parse()
 
 	// Wait at most 3 minutes to publish the service
