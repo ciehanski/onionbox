@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"syscall"
 
 	"github.com/ciehanski/onionbox/onionbuffer"
@@ -89,6 +90,7 @@ func (ob *Onionbox) downloadGet(w http.ResponseWriter, r *http.Request) {
 		// Set headers for browser to initiate download
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", oBuffer.Name))
 		w.Header().Set("Content-Type", "application/zip; charset=utf-8")
+		w.Header().Set("Content-Length", strconv.Itoa(len(oBuffer.Bytes())))
 		// Write the zip bytes to the response for download
 		_, err = w.Write(oBuffer.Bytes)
 		if err != nil {
@@ -167,6 +169,7 @@ func (ob *Onionbox) downloadPost(w http.ResponseWriter, r *http.Request) {
 	// Set headers for browser to initiate download
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.zip", oBuffer.Name))
 	w.Header().Set("Content-Type", "application/zip; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(oBuffer.Bytes())))
 	// Write the zip bytes to the response for download
 	_, err = w.Write(decryptedBytes)
 	if err != nil {
