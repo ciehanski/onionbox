@@ -30,7 +30,7 @@ jobs:
     env: BUILD_OS=darwin
     script:
     - go get -u -a -v -x github.com/ipsn/go-libtor
-    - cd cmd/onionbox && CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=$BUILD_OS GOARCH=amd64 go build -a -v -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=amd64 go build -a -v -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
   # Windows
   - name: windows-amd64
     env: BUILD_OS=windows
@@ -77,7 +77,7 @@ before_script:
 - mkdir cmd/onionbox/build
 - go get -u github.com/karalabe/xgo
 - go get -u github.com/mattn/goveralls
-# - go mod download
+- go mod download
 - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
 
 # Build the project
