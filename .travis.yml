@@ -65,6 +65,7 @@ jobs:
   allow_failures:
   - env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
   - env: BUILD_OS=darwin
+  - env: BUILD_OS=windows
 
 # Get dependencies & run tests
 before_script:
