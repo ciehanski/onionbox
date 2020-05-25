@@ -76,19 +76,25 @@ jobs:
   allow_failures:
   - env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
 
+# Get dependencies
 before_script:
 - mkdir cmd/onionbox/bin
 - go get -u -a -v -x github.com/ipsn/go-libtor
+- go get -u github.com/karalabe/xgo
 - go mod download
+
+# Run tests and sent coverage to coveralls
+script:
 - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
 - go get -u github.com/mattn/goveralls
 - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
 
-script:
-- go get -u github.com/karalabe/xgo
-- cd cmd/onionbox && $GOPATH/bin/xgo --targets=$BUILD_OS/$BUILD_ARCH bin/onionbox-$TRAVIS_TAG-$BINARY
+# Finally, build the project
+after_script:
+- cd cmd/onionbox && $GOPATH/bin/xgo --targets=$BUILD_OS/$BUILD_ARCH -out bin/onionbox-$TRAVIS_TAG .
 # - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
+# Deploy artifcats to S3
 deploy:
   provider: s3
   access_key_id: $ARTIFACTS_KEY
