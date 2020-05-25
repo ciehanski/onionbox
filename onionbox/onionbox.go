@@ -29,7 +29,9 @@ const (
 type Onionbox struct {
 	OnionURL    string
 	RemotePort  int
+	LocalPort   int
 	TorVersion3 bool
+	TorrcFile   string
 	Store       *onionstore.OnionStore
 	Logger      *log.Logger
 	Server      *http.Server
@@ -47,7 +49,7 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 		if runtime.GOOS != "windows" {
 			lj = &lumberjack.Logger{
 				Filename:   "/var/log/onionbox/onionbox.log",
-				MaxSize:    100, // megabytes
+				MaxSize:    10, // megabytes
 				MaxBackups: 3,
 				MaxAge:     28, // days
 				Compress:   true,
@@ -57,7 +59,7 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 		} else {
 			lj = &lumberjack.Logger{
 				Filename:   "%APPDATA%/Local/onionbox/onionbox.log",
-				MaxSize:    100, // megabytes
+				MaxSize:    10, // megabytes
 				MaxBackups: 3,
 				MaxAge:     28, // days
 				Compress:   true,
@@ -71,7 +73,7 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 	}
 
 	// Start Tor
-	t, err := startTor(torLogger)
+	t, err := ob.startTor(torLogger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -97,7 +99,7 @@ func (ob *Onionbox) Init(ctx context.Context) (*tor.Tor, *tor.OnionService, erro
 	return t, onionSvc, nil
 }
 
-func startTor(logger io.Writer) (*tor.Tor, error) {
+func (ob *Onionbox) startTor(logger io.Writer) (*tor.Tor, error) {
 	fmt.Println("Starting and registering onion service, please wait...")
 
 	var tempDataDir string
@@ -110,9 +112,11 @@ func startTor(logger io.Writer) (*tor.Tor, error) {
 	t, err := tor.Start(nil, &tor.StartConf{ // Start tor
 		ProcessCreator:         libtor.Creator,
 		DebugWriter:            logger,
-		UseEmbeddedControlConn: runtime.GOOS != "windows", // This option is not supported on Windows
+		UseEmbeddedControlConn: true, // Since we are using embedded tor via go-libtor
 		TempDataDirBase:        tempDataDir,
 		RetainTempDataDir:      false,
+		TorrcFile:              ob.TorrcFile,
+		NoHush:                 ob.Debug,
 	})
 	if err != nil {
 		return nil, err
@@ -125,6 +129,7 @@ func (ob *Onionbox) listenTor(ctx context.Context, t *tor.Tor) (*tor.OnionServic
 	onionSvc, err := t.Listen(ctx, &tor.ListenConf{
 		Version3:    ob.TorVersion3,
 		RemotePorts: []int{ob.RemotePort},
+		LocalPort:   ob.LocalPort,
 	})
 	if err != nil {
 		return nil, err
