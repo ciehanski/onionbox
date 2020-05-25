@@ -33,6 +33,7 @@ jobs:
     env: BUILD_OS=windows
     script:
     - sudo apt-get install gcc-multilib gcc-mingw-w64
+    - go get -u -a -v -x github.com/ipsn/go-libtor
     - cd cmd/onionbox && CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ GOOS=$BUILD_OS GOARCH=amd64 go build -a -v -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
   # Android
   - language: android
