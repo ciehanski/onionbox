@@ -12,22 +12,22 @@ jobs:
   include:
   # Linux
   - name: linux
-    env: BUILD_OS=linux
+    env: BUILD_OS=linux/amd64,linux/arm,linux/arm64
   # Darwin
   - name: darwin
-    env: BUILD_OS=darwin
+    env: BUILD_OS=darwin/*
   # Windows
   - name: windows
-    env: BUILD_OS=windows
+    env: BUILD_OS=windows/*
   # FreeBSD
   - name: freebsd
-    env: BUILD_OS=freebsd
+    env: BUILD_OS=freebsd/*
   # OpenBSD
   - name: openbsd
-    env: BUILD_OS=openbsd
+    env: BUILD_OS=openbsd/*
   # NetBSD
   - name: netbsd
-    env: BUILD_OS=netbsd
+    env: BUILD_OS=netbsd/*
   # Android
   - language: android
     name: android
@@ -72,7 +72,7 @@ before_script:
 
 # Build the project
 script:
-- cd cmd/onionbox && $GOPATH/bin/xgo -v -x -out onionbox-$TRAVIS_TAG --targets=$BUILD_OS/* .
+- cd cmd/onionbox && $GOPATH/bin/xgo -v -x -out onionbox-$TRAVIS_TAG --targets=$BUILD_OS .
 # - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 # Upload test coverage to coveralls.io
