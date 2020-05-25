@@ -50,10 +50,15 @@ provided:
 $ chmod +x onionbox
 $ ./onionbox -port 8080 -debug
 
-    -port <int> : tell onionbox with port to make your onion service remotely
-    availble on.
+    -lport <int> : tell onionbox which port to make your onion service locally
+    run on.
+
+    -rport <int> : tell onionbox which port to make your onion service remotely
+    available on.
 
     -torv3 <bool> : tell onionbox to run on torv3 or torv2.
+
+    -torrc <string> : utilize a custom Torrc file to run your onion service.
 
     -debug <bool> : tell onionbox to print debug logs or silence logs.
 ```
