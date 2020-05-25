@@ -221,6 +221,9 @@ func (ob *Onionbox) uploadPost(w http.ResponseWriter, r *http.Request) {
 func writeUploadComplete(w http.ResponseWriter, onionAddr string) error {
 	// Generate QR code for download URL
 	qrCode, err := qrcode.Encode(onionAddr, qrcode.Medium, 256)
+	if err != nil {
+		return err
+	}
 	// convert []byte to image for saving to file
 	qrImg, _, err := image.Decode(bytes.NewReader(qrCode))
 	if err != nil {
