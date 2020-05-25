@@ -15,7 +15,7 @@ jobs:
   - name: linux-arm64
     env: BUILD_OS=linux BUILD_ARCH=arm64 BINARY=linux-arm64
   - name: linux-arm
-    env: BUILD_OS=linux BUILD_ARCH=arm ARM_VERSION=5 BINARY=linux-arm
+    env: BUILD_OS=linux BUILD_ARCH=arm-7 BINARY=linux-arm
   - name: linux-386
     env: BUILD_OS=linux BUILD_ARCH=386 BINARY=linux-386
   - name: darwin-amd64
@@ -29,19 +29,19 @@ jobs:
   - name: freebsd-386
     env: BUILD_OS=freebsd BUILD_ARCH=386 BINARY=freebsd-386
   - name: freebsd-arm
-    env: BUILD_OS=freebsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=freebsd-arm
+    env: BUILD_OS=freebsd BUILD_ARCH=arm-7 BINARY=freebsd-arm
   - name: openbsd-amd64
     env: BUILD_OS=openbsd BUILD_ARCH=amd64 BINARY=openbsd-amd64
   - name: openbsd-386
     env: BUILD_OS=openbsd BUILD_ARCH=386 BINARY=openbsd-386
   - name: openbsd-arm
-    env: BUILD_OS=openbsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=openbsd-arm
+    env: BUILD_OS=openbsd BUILD_ARCH=arm-7 BINARY=openbsd-arm
   - name: netbsd-amd64
     env: BUILD_OS=netbsd BUILD_ARCH=amd64 BINARY=netbsd-amd64
   - name: netbsd-386
     env: BUILD_OS=netbsd BUILD_ARCH=386 BINARY=netbsd-386
   - name: netbsd-arm
-    env: BUILD_OS=netbsd BUILD_ARCH=arm ARM_VERSION=5 BINARY=netbsd-arm
+    env: BUILD_OS=netbsd BUILD_ARCH=arm-7 BINARY=netbsd-arm
   - name: windows-amd64
     env: BUILD_OS=windows BUILD_ARCH=amd64 BINARY=windows-amd64.exe
   - name: windows-386
@@ -82,10 +82,12 @@ before_script:
 - go mod download
 - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
 - go get -u github.com/mattn/goveralls
-- "$GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov"
+- $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
 
 script:
-- cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH GOARM=$ARM_VERSION go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
+- go get -u github.com/karalabe/xgo
+- cd cmd/onionbox && $GOPATH/bin/xgo --targets=$BUILD_OS/$BUILD_ARCH bin/onionbox-$TRAVIS_TAG-$BINARY
+# - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 deploy:
   provider: s3
