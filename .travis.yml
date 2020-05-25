@@ -1,5 +1,5 @@
 language: go
-go: 1.14.x
+go: 1.13.x
 os: linux
 dist: xenial
 install: true
@@ -79,10 +79,10 @@ jobs:
 # Get dependencies
 before_script:
 - mkdir cmd/onionbox/bin
-- go get -u -a -v -x github.com/ipsn/go-libtor
+# - go get -u -a -v -x github.com/ipsn/go-libtor
 - go get -u github.com/karalabe/xgo
 - go get -u github.com/mattn/goveralls
-- go mod download
+# - go mod download
 
 # Run tests and build the project
 script:
@@ -91,7 +91,7 @@ script:
 # - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 # Upload test coverage to coveralls.io
-after_script:
+after_success:
 - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=profile.cov
 
 # Deploy artifcats to S3
