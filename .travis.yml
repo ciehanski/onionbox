@@ -87,7 +87,7 @@ before_script:
 # Run tests and build the project
 script:
 - go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
-- $GOPATH/bin/xgo --targets=$BUILD_OS/$BUILD_ARCH -out bin/onionbox-$TRAVIS_TAG .
+- cd cmd/onionbox && $GOPATH/bin/xgo -v -x -out onionbox-$TRAVIS_TAG --targets=$BUILD_OS/$BUILD_ARCH .
 # - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o bin/onionbox-$TRAVIS_TAG-$BINARY .
 
 # Upload test coverage to coveralls.io
