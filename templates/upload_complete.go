@@ -12,7 +12,8 @@ const UploadCompleteHTML = `<!DOCTYPE html>
 		<center>
 			<br><br><br>
 			<h1 class="title is-1">[onionbox]</h1><br>
-			<h2>Files uploaded. Please share this link with your recipient(s): {{.OnionAddr}}</h2>
+			<h2>Files uploaded. Please share this link with your recipient(s):</h2>
+			<h1><b>{{.OnionAddr}}</b></h1>
 			<br>
 			<img src="data:image/png;base64,{{.QR}}">
 		</center>
