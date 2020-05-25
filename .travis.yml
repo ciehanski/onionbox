@@ -25,6 +25,11 @@ jobs:
     env: BUILD_OS=linux/arm64
     script:
     - cd cmd/onionbox && $GOPATH/bin/xgo -v -x -out onionbox-$TRAVIS_TAG --targets=$BUILD_OS .
+  # Linux 386
+  - name: linux-386
+    env: BUILD_OS=linux
+    - go get -u -a -v -x github.com/ipsn/go-libtor
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=386 go build -a -v -o build/onionbox-$TRAVIS_TAG-$BUILD_OS .
   # Darwin
   - name: darwin-amd64
     env: BUILD_OS=darwin
