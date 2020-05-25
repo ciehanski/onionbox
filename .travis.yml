@@ -18,10 +18,16 @@ jobs:
     env: BUILD_OS=linux BUILD_ARCH=arm-7 BINARY=linux-arm
   - name: linux-386
     env: BUILD_OS=linux BUILD_ARCH=386 BINARY=linux-386
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BINARY .
   - name: darwin-amd64
     env: BUILD_OS=darwin BUILD_ARCH=amd64 BINARY=darwin-amd64
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BINARY .
   - name: darwin-386
     env: BUILD_OS=darwin BUILD_ARCH=386 BINARY=darwin-386
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BINARY .
   - name: darwin-arm64
     env: BUILD_OS=darwin BUILD_ARCH=arm64 BINARY=darwin-arm64
   - name: freebsd-amd64
@@ -44,8 +50,12 @@ jobs:
     env: BUILD_OS=netbsd BUILD_ARCH=arm-7 BINARY=netbsd-arm
   - name: windows-amd64
     env: BUILD_OS=windows BUILD_ARCH=amd64 BINARY=windows-amd64.exe
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BINARY .
   - name: windows-386
     env: BUILD_OS=windows BUILD_ARCH=386 BINARY=windows-386.exe
+    script:
+    - cd cmd/onionbox && CGO_ENABLED=1 GOOS=$BUILD_OS GOARCH=$BUILD_ARCH go build -v -a -installsuffix cgo -ldflags '-s' -o build/onionbox-$TRAVIS_TAG-$BINARY .
   - language: android
     name: android
     env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
@@ -75,11 +85,12 @@ jobs:
   fast_finish: true
   allow_failures:
   - env: BUILD_OS=android BUILD_ARCH=arm64 BINARY=android-arm64.aar
+  - env: BUILD_OS=linux BUILD_ARCH=386 BINARY=linux-386
 
 # Get dependencies
 before_script:
-- mkdir cmd/onionbox/bin
 # - go get -u -a -v -x github.com/ipsn/go-libtor
+- mkdir cmd/onionbox/build
 - go get -u github.com/karalabe/xgo
 - go get -u github.com/mattn/goveralls
 # - go mod download
@@ -102,4 +113,4 @@ deploy:
   bucket: $ARTIFACTS_BUCKET
   skip_cleanup: true
   region: us-east-2
-  local_dir: $TRAVIS_BUILD_DIR/cmd/onionbox/bin
+  local_dir: $TRAVIS_BUILD_DIR/cmd/onionbox/build
