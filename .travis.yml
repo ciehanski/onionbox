@@ -105,5 +105,5 @@ deploy:
   secret_access_key: $ARTIFACTS_SECRET
   bucket: $ARTIFACTS_BUCKET
   skip_cleanup: true
-  region: us-east-2
+  region: us-east-1
   local_dir: $TRAVIS_BUILD_DIR/cmd/onionbox/build
