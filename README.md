@@ -22,6 +22,9 @@ generated .onion URL and have them upload the files directly for you to download
 of course deploy onionbox to any cloud provider of your choosing.
 - Static binary! Woo!
 
+![onionbox Example-1](./.github/assets/homepage.png)
+![onionbox Example-2](./.github/assets/upload_complete.png)
+
 ## TODO:
 - [ ] Implement more tests
 - [ ] Android support (build almost working)
