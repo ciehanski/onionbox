@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
+        env:
+          GOPATH: $HOME
 
       - name: Checkout Code
         id: checkout-code
@@ -44,11 +46,11 @@ jobs:
 
       - name: Build Linux ARM
         id: build-linux-arm
-        run: $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm cmd/onionbox/main.go
+        run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm .
 
       - name: Build Linux ARM64
         id: build-linux-arm64
-        run: $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm64 cmd/onionbox/main.go
+        run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm64 .
 
       - name: Test
         id: test
