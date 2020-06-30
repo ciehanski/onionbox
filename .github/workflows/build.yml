@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
-        env:
-          GOPATH: $HOME
 
       - name: Checkout Code
         id: checkout-code
@@ -36,21 +34,12 @@ jobs:
       - name: Install Dependencies
         id: install-deps
         run: |
-          go get -u github.com/karalabe/xgo
           go get -u -a -v -x github.com/ipsn/go-libtor
           go mod download
 
       - name: Build Linux AMD64
         id: build-linux-amd64
         run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o artifacts/onionbox-linux-amd64 .
-
-      - name: Build Linux ARM
-        id: build-linux-arm
-        run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm .
-
-      - name: Build Linux ARM64
-        id: build-linux-arm64
-        run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm64 .
 
       - name: Test
         id: test
