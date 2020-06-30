@@ -7,7 +7,7 @@ on:
     branches:
       - '*'
 jobs:
-  test:
+  build:
     strategy:
       matrix:
         go-version: [1.13.x]
@@ -44,10 +44,14 @@ jobs:
 
       - name: Build Linux ARM 
         id: build-linux-arm
+        env:
+          GOPATH: $(go env GOPATH)
         run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox-linux-arm --targets=linux/arm .
 
       - name: Build Linux ARM64 
         id: build-linux-arm64
+        env:
+          GOPATH: $(go env GOPATH)
         run: cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox-linux-arm64 --targets=linux/arm64 .
 
       - name: Test
