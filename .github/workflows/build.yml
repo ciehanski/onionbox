@@ -1,0 +1,62 @@
+name: build
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [1.13.x]
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Install Go
+        id: install-go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Checkout Code
+        id: checkout-code
+        uses: actions/checkout@v2.3.1
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install Dependencies
+        id: install-deps
+        run: |
+          go get -u -a -v -x github.com/ipsn/go-libtor
+          go mod download
+
+      - name: Build Linux AMD64
+        id: build-linux-amd64
+        run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o artifacts/onionbox-linux-amd64 .
+
+      - name: Test
+        id: test
+        run: go test -v -race -bench -cpu=1,2,4 -covermode atomic -coverprofile=profile.cov ./...
+
+      - name: Submit Code Coverage
+        id: submit-code-cov
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          GO111MODULE=off go get -u github.com/mattn/goveralls
+          $(go env GOPATH)/bin/goveralls -service=github -coverprofile=profile.cov
+
+      - name: Upload Artifacts
+        id: upload-artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: onionbox-artifacts
+          path: cmd/onionbox/artifacts/
