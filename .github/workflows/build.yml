@@ -38,21 +38,21 @@ jobs:
           go get -u -a -v -x github.com/ipsn/go-libtor
           go mod download
 
-      - name: Build Linux AMD64 
+      - name: Build Linux AMD64
         id: build-linux-amd64
         run: cd cmd/onionbox && CGO_ENABLED=1 GO111MODULE=on go build -a -installsuffix cgo -ldflags '-s' -o artifacts/onionbox-linux-amd64 .
 
-      - name: Build Linux ARM 
+      - name: Build Linux ARM
         id: build-linux-arm
         run: |
-          export GOPATH=$(go env GOPATH)
-          cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox-linux-arm --targets=linux/arm .
+          export GOPATH=$HOME/go
+          cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm .
 
-      - name: Build Linux ARM64 
+      - name: Build Linux ARM64
         id: build-linux-arm64
         run: |
-          export GOPATH=$(go env GOPATH)
-          cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox-linux-arm64 --targets=linux/arm64 .
+          export GOPATH=$HOME/go
+          cd cmd/onionbox && $(go env GOPATH)/bin/xgo -v -x -out artifacts/onionbox --targets=linux/arm64 .
 
       - name: Test
         id: test
