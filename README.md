@@ -1,4 +1,4 @@
-# onionbox [![Build Status](https://travis-ci.com/ciehanski/onionbox.svg?branch=master)](https://travis-ci.com/ciehanski/onionbox) [![Go Report Card](https://goreportcard.com/badge/github.com/ciehanski/onionbox)](https://goreportcard.com/report/github.com/ciehanski/onionbox) [![Coverage Status](https://coveralls.io/repos/github/ciehanski/onionbox/badge.svg?branch=master)](https://coveralls.io/github/ciehanski/onionbox?branch=master)
+# onionbox ![build](https://github.com/ciehanski/onionbox/workflows/build/badge.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/github/ciehanski/onionbox/badge.svg?branch=master)](https://coveralls.io/github/ciehanski/onionbox?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ciehanski/onionbox)](https://goreportcard.com/report/github.com/ciehanski/onionbox) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fciehanski%2Fonionbox?ref=badge_shield)
 
 A basic implementation of [OnionShare](https://github.com/micahflee/onionshare) in Go.
 Mostly built as a fun project, onionbox is still a WIP so usage is not guaranteed secure, *yet*.
@@ -28,7 +28,7 @@ of course deploy onionbox to any cloud provider of your choosing.
 ## TODO:
 - [ ] Implement more tests
 - [ ] Android support (build almost working)
-- [x] Windows support (needs testing)
+- [ ] Windows support
 - [x] ARM support
 - [x] QR Code Generation
 - [ ] Add another mode supporting cli-only upload from disk
@@ -51,7 +51,7 @@ provided:
 
 ```bash
 $ chmod +x onionbox
-$ ./onionbox -port 8080 -debug
+$ ./onionbox -lport 8080 -debug
 
     -lport <int> : tell onionbox which port to make your onion service locally
     run on.
@@ -68,9 +68,7 @@ $ ./onionbox -port 8080 -debug
 
 ## Contributing:
 
-Any pull request submitted must meet the following requirements:
-- Have included tests applicable to the relevant PR.
-- Attempt to adhere to the standard library as much as possible.
+Contributions and PRs are welcome!
 
 You can get started by either forking or cloning the repo. After, you can get started
 by running:
@@ -113,11 +111,6 @@ Lint the project:
 ```bash
 make lint
 ```
-
-## Shoutouts:
-Huge shoutout to [@karalabe](https://github.com/karalabe), the creator of [go-libtor](https://github.com/ipsn/go-libtor) which enables the 
-creation of a Go-friendly static Tor binary which utilizes [bine](https://github.com/cretz/bine) (created by [@cretz](https://github.com/cretz))
-to interface with the Tor API. Big thanks to these guys or this project would not be possible.
 
 ## License:
 - AGPLv3
