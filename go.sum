@@ -24,6 +24,7 @@ github.com/ipsn/go-libtor v1.0.289 h1:LpeYYcVMiAVD0WQcMY8Wi+lbt3YrUggHxLbew/Nwol
 github.com/ipsn/go-libtor v1.0.289/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
 github.com/ipsn/go-libtor v1.0.294 h1:z/X6MnjHtcg+R1tXq2SxsWj06vkssNzNQ8Jkdb5yP6U=
 github.com/ipsn/go-libtor v1.0.294/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
+github.com/ipsn/go-libtor v1.0.365/go.mod h1:6rIeHU7irp8ZH8E/JqaEOKlD6s4vSSUh4ngHelhlSMw=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/skip2/go-qrcode v0.0.0-20200519171959-a3b48390827e h1:xVeSA6fTG0og2KsF+Jh9vzx8gYRtBfLmpXzp3L1eThY=
