@@ -1,0 +1,22 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "11:00"
+  open-pull-requests-limit: 10
+  assignees:
+  - ciehanski
+  ignore:
+  - dependency-name: github.com/ipsn/go-libtor
+    versions:
+    - 1.0.355
+    - 1.0.357
+    - 1.0.361
+    - 1.0.365
+    - 1.0.368
+    - 1.0.371
+    - 1.0.373
+    - 1.0.378
+    - 1.0.379
